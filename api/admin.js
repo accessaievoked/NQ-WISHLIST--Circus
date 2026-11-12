@@ -752,6 +752,21 @@ html,body{font-family:'Inter',sans-serif;background:#fff;color:#0a0a0a;-webkit-f
   }
   window.doLogout = doLogout;
 
+  // ─── Local-date helpers ──────────────────────────────────
+  // The date range must use the viewer's LOCAL calendar day. toISOString() is UTC,
+  // so between 12:00am and 5:30am IST it returned yesterday's date and hid today's
+  // entries; new Date('YYYY-MM-DD') also parses as UTC midnight, not local.
+  function toLocalISO(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+  function parseLocalDate(str) {
+    const p = String(str).split('-');
+    return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]), 0, 0, 0, 0);
+  }
+
   // ─── Init dashboard after login ──────────────────────────
   function initDashboard() {
     // Always show the overview screen FIRST, so the static page header,
@@ -762,15 +777,15 @@ html,body{font-family:'Inter',sans-serif;background:#fff;color:#0a0a0a;-webkit-f
     try {
       const now = new Date();
       const d7  = new Date(now); d7.setDate(d7.getDate() - 7);
-      const rt = $('range-to');   if (rt) rt.value = now.toISOString().slice(0, 10);
-      const rf = $('range-from'); if (rf) rf.value = d7.toISOString().slice(0, 10);
+      const rt = $('range-to');   if (rt) rt.value = toLocalISO(now);
+      const rf = $('range-from'); if (rf) rf.value = toLocalISO(d7);
       const chip = $('chip-7');
       if (chip) {
         setRangeDays(7, chip);
       } else {
         // Fallback: set state directly and render
-        const fromIso = d7.toISOString().slice(0, 10);
-        const toIso   = now.toISOString().slice(0, 10);
+        const fromIso = toLocalISO(d7);
+        const toIso   = toLocalISO(now);
         RANGE_START = fromIso; RANGE_END = toIso;
         applyFilterAndRender();
       }
@@ -795,8 +810,8 @@ html,body{font-family:'Inter',sans-serif;background:#fff;color:#0a0a0a;-webkit-f
     } else {
       const now  = new Date();
       const from = new Date(now); from.setDate(from.getDate() - days);
-      RANGE_START = from.toISOString().slice(0, 10);
-      RANGE_END   = now.toISOString().slice(0, 10);
+      RANGE_START = toLocalISO(from);
+      RANGE_END   = toLocalISO(now);
       $('range-from').value = RANGE_START;
       $('range-to').value   = RANGE_END;
     }
@@ -816,8 +831,8 @@ html,body{font-family:'Inter',sans-serif;background:#fff;color:#0a0a0a;-webkit-f
     if (!RANGE_START || !RANGE_END) {
       FILTERED = CUSTOMERS.map(c => ({ ...c, items: [...c.items] }));
     } else {
-      const s = new Date(RANGE_START); s.setHours(0, 0, 0, 0);
-      const e = new Date(RANGE_END);   e.setHours(23, 59, 59, 999);
+      const s = parseLocalDate(RANGE_START);
+      const e = parseLocalDate(RANGE_END); e.setHours(23, 59, 59, 999);
       FILTERED = CUSTOMERS.map(c => {
         const items = c.items.filter(it => {
           if (!it.added_at) return false;
@@ -944,8 +959,10 @@ html,body{font-family:'Inter',sans-serif;background:#fff;color:#0a0a0a;-webkit-f
     ctx.scale(devicePixelRatio, devicePixelRatio);
     ctx.clearRect(0, 0, W, H);
 
-    const s = RANGE_START ? new Date(RANGE_START) : new Date(Date.now() - 7 * 864e5);
-    const e = RANGE_END   ? new Date(RANGE_END)   : new Date();
+    const s = RANGE_START ? parseLocalDate(RANGE_START) : new Date(Date.now() - 7 * 864e5);
+    // End is exclusive below, so go to the start of the day AFTER the selected end day.
+    const e = RANGE_END   ? parseLocalDate(RANGE_END) : new Date();
+    if (RANGE_END) e.setDate(e.getDate() + 1);
     const diffDays = Math.max(1, Math.round((e - s) / 864e5));
     const buckets  = Math.min(diffDays, 14);
     const stepMs   = (e - s) / buckets;
@@ -1072,7 +1089,7 @@ html,body{font-family:'Inter',sans-serif;background:#fff;color:#0a0a0a;-webkit-f
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     a.href = url;
-    a.download = 'wishlist-customers-' + new Date().toISOString().slice(0, 10) + '.csv';
+    a.download = 'wishlist-customers-' + toLocalISO(new Date()) + '.csv';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
     showToast('CSV downloaded ✓');
