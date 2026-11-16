@@ -53,6 +53,7 @@ function getCORSOrigin(requestOrigin) {
 }
 
 const { ensureEntryFields } = require('./_shopify');
+const { sendNowIfInstant } = require('./_reminders');
 
 // ─── Main handler ─────────────────────────────────────────────────────────────
 module.exports = async function handler(req, res) {
@@ -147,6 +148,9 @@ async function addToWishlist(req, res) {
 
   const errors = data.metaobjectCreate.userErrors;
   if (errors.length) return res.status(400).json({ error: errors });
+
+  // "Send after: 0 hours" in the admin's Email tab means email them right now (otherwise the daily cron does it)
+  if (emailOk) await sendNowIfInstant(cleanEmail);
 
   return res.status(201).json({
     success: true,
