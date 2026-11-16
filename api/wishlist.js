@@ -122,7 +122,8 @@ async function addToWishlist(req, res) {
       fields: [
         { key: 'phone',           value: cleanPhone },
         { key: 'customer_name',   value: customer_name    || '' },
-        { key: 'customer_email',  value: emailOk ? cleanEmail : '' },
+        // only sent when we have one, so saving still works on stores that haven't run /api/setup since email was added
+        ...(emailOk ? [{ key: 'customer_email', value: cleanEmail }] : []),
         { key: 'product_id',      value: String(product_id) },
         { key: 'product_title',   value: product_title   || '' },
         { key: 'product_handle',  value: product_handle  || '' },
