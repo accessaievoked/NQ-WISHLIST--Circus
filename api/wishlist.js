@@ -95,14 +95,16 @@ async function addToWishlist(req, res) {
     return res.status(400).json({ error: 'phone and product_id are required' });
   }
 
-  const cleanPhone = sanitizePhone(phone);
-  if (cleanPhone.length < 7) {
-    return res.status(400).json({ error: 'Invalid phone number' });
+  // The storefront popup sends the shopper's email in the "phone" field (it is the key for their wishlist).
+  // Phone numbers and email addresses are both accepted.
+  const cleanPhone = sanitizeKey(phone);
+  if (!cleanPhone || (isEmail(cleanPhone) ? false : cleanPhone.length < 7)) {
+    return res.status(400).json({ error: 'Invalid phone number or email' });
   }
 
   // Optional email address (used for email reminders). Ignored if it doesn't look like an email.
-  const cleanEmail = String(customer_email || '').trim().toLowerCase().substring(0, 200);
-  const emailOk = /^[^s@<>,;]+@[^s@<>,;]+.[^s@<>,;]+$/.test(cleanEmail);
+  const cleanEmail = (isEmail(cleanPhone) ? cleanPhone : String(customer_email || '').trim().toLowerCase().substring(0, 200));
+  const emailOk = isEmail(cleanEmail);
 
   // Prevent duplicate entries
   const existingId = await findEntry(cleanPhone, String(product_id));
@@ -157,7 +159,7 @@ async function getWishlist(req, res) {
   const phone = req.query?.phone;
   if (!phone) return res.status(400).json({ error: 'phone query param is required' });
 
-  const entries = await fetchEntriesByPhone(sanitizePhone(phone));
+  const entries = await fetchEntriesByPhone(sanitizeKey(phone));
   return res.status(200).json({ wishlist: entries });
 }
 
@@ -168,7 +170,7 @@ async function removeFromWishlist(req, res) {
     return res.status(400).json({ error: 'phone and product_id are required' });
   }
 
-  const id = await findEntry(sanitizePhone(phone), String(product_id));
+  const id = await findEntry(sanitizeKey(phone), String(product_id));
   if (!id) return res.status(404).json({ error: 'Wishlist entry not found' });
 
   await gql(
@@ -225,6 +227,18 @@ async function findEntry(phone, product_id) {
   const entries = await fetchEntriesByPhone(phone);
   const found = entries.find(e => e.product_id === product_id);
   return found ? found.id : null;
+}
+
+const isEmail = (v) => /^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/.test(String(v || ''));
+
+// An email address (lower-cased) or a phone number, whichever was sent
+function sanitizeKey(v) {
+  const t = String(v == null ? '' : v).trim();
+  if (t.includes('@')) {
+    const e = t.toLowerCase().substring(0, 100);
+    return isEmail(e) ? e : '';
+  }
+  return sanitizePhone(t);
 }
 
 function sanitizePhone(phone) {
