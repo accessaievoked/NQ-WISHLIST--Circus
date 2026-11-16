@@ -6,9 +6,9 @@ const css = `
 @media(max-width:1000px){.em-grid{grid-template-columns:1fr}}
 .em-card{background:#fff;border:1px solid #f0f0ee;border-radius:12px;padding:18px;margin-bottom:16px}
 .em-card h3{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#9a9a93;margin-bottom:14px}
-.em-row{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.em-row{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;align-items:flex-start}
 .em-f{flex:1;min-width:140px;display:flex;flex-direction:column;gap:5px}
-.em-f label{font-size:12px;font-weight:500;color:#444}
+.em-f label{font-size:12px;font-weight:500;color:#444;white-space:nowrap}
 .em-f input[type=text],.em-f input[type=number],.em-f input[type=email],.em-f textarea,.em-f select{width:100%;padding:9px 11px;border:1px solid #e8e8e4;border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;background:#fafaf8;color:#0a0a0a;outline:none}
 .em-f input:focus,.em-f textarea:focus,.em-f select:focus{border-color:#0a0a0a;background:#fff}
 .em-f textarea{min-height:92px;resize:vertical;line-height:1.5}
@@ -95,8 +95,8 @@ function client() {
       '<div class="em-card"><h3>Automatic reminders</h3>' +
       check('enabled', 'Send reminder emails automatically') +
       '<div class="em-row">' + field('delayHours', 'Send after (hours)', 'number', { min: 0, max: 720, hint: 'Hours after the shopper saves an item' }) +
-      field('minGapDays', 'Gap between emails (days)', 'number', { min: 0, max: 90, hint: 'Never email the same person more often' }) +
-      field('maxItems', 'Max products shown', 'number', { min: 1, max: 10 }) + '</div>' +
+      field('minGapDays', 'Gap (days)', 'number', { min: 0, max: 90, hint: 'Never email the same person more often' }) +
+      field('maxItems', 'Max products', 'number', { min: 1, max: 10 }) + '</div>' +
       '<div class="em-hint">Reminders only go to shoppers who left an email address. They run once a day.</div></div>' +
 
       '<div class="em-card"><h3>Sender</h3><div class="em-row">' +
