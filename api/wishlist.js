@@ -52,6 +52,8 @@ function getCORSOrigin(requestOrigin) {
   return ALWAYS_ALLOWED[0];
 }
 
+const { ensureEntryFields } = require('./_shopify');
+
 // ─── Main handler ─────────────────────────────────────────────────────────────
 module.exports = async function handler(req, res) {
   // Get the requesting origin
@@ -108,7 +110,7 @@ async function addToWishlist(req, res) {
     return res.status(200).json({ success: true, alreadyExists: true, id: existingId });
   }
 
-  const data = await gql(
+  const create = () => gql(
     `mutation CreateWishlistEntry($fields: [MetaobjectFieldInput!]!) {
        metaobjectCreate(metaobject: {
          type: "wishlist_entry",
@@ -134,6 +136,12 @@ async function addToWishlist(req, res) {
       ],
     }
   );
+
+  let data = await create();
+  // Saving with an email on a store that hasn't run /api/setup yet: add the missing fields, then try once more
+  if (emailOk && data.metaobjectCreate.userErrors.length) {
+    try { if (await ensureEntryFields()) data = await create(); } catch (e) { console.error('[Wishlist ensure fields]', e.message); }
+  }
 
   const errors = data.metaobjectCreate.userErrors;
   if (errors.length) return res.status(400).json({ error: errors });

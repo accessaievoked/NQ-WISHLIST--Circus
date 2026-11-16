@@ -56,4 +56,26 @@ const money = (v) => {
   return v === '' || v == null || !Number.isFinite(n) ? '' : '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 2 });
 };
 
-module.exports = { gql, fetchAllEntries, updateEntry, money };
+// Adds any email-related fields the wishlist_entry definition is missing (same job as /api/setup, but automatic).
+// Returns true if something was added.
+async function ensureEntryFields() {
+  const want = [
+    ['customer_email', 'Customer Email'], ['reminded_at', 'Reminder Sent At'], ['unsubscribed', 'Unsubscribed From Email'],
+  ];
+  const look = await gql(`query { metaobjectDefinitionByType(type: "wishlist_entry") { id fieldDefinitions { key } } }`);
+  const def = look.metaobjectDefinitionByType;
+  if (!def) return false;
+  const have = new Set(def.fieldDefinitions.map((f) => f.key));
+  const missing = want.filter(([k]) => !have.has(k));
+  if (!missing.length) return false;
+  const r = await gql(
+    `mutation($id: ID!, $d: MetaobjectDefinitionUpdateInput!) {
+       metaobjectDefinitionUpdate(id: $id, definition: $d) { userErrors { message } }
+     }`,
+    { id: def.id, d: { fieldDefinitions: missing.map(([key, name]) => ({ create: { key, name, type: 'single_line_text_field', required: false } })) } }
+  );
+  if (r.metaobjectDefinitionUpdate.userErrors.length) throw new Error(JSON.stringify(r.metaobjectDefinitionUpdate.userErrors));
+  return true;
+}
+
+module.exports = { gql, fetchAllEntries, updateEntry, ensureEntryFields, money };
