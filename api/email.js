@@ -3,6 +3,7 @@
 //   GET  /api/email?secret=...&to=a@b.com -> sends a sample reminder ("[Test] ...") to that address
 //   GET  /api/email?secret=...&preview=1  -> shows the email in the browser
 const email = require('./_email');
+const settingsStore = require('./_emailSettings');
 
 const API_SECRET = process.env.WISHLIST_API_SECRET || '';
 const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
@@ -12,6 +13,7 @@ module.exports = async function handler(req, res) {
   if (!API_SECRET || secret !== API_SECRET) return res.status(401).json({ error: 'Unauthorized' });
   res.setHeader('Cache-Control', 'no-store');
 
+  email.use(await settingsStore.load());
   const mail = email.renderEmail({
     customerName: 'Asha',
     items: email.SAMPLE_ITEMS,

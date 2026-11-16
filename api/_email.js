@@ -19,6 +19,12 @@ const nodemailer = require('nodemailer');
 
 const env = (k, d = '') => process.env[k] || d;
 
+// Settings saved from the admin's Email tab (see _emailSettings.js). Call use(settings) once per request;
+// anything not set there falls back to the Vercel env vars below.
+let S = {};
+function use(settings) { S = settings || {}; }
+const setting = (key, envName, d = '') => (S[key] !== undefined && S[key] !== '' ? S[key] : env(envName, d));
+
 // ─── Config ───────────────────────────────────────────────────────────────────
 function storeName() {
   return env('STORE_NAME') || env('SHOPIFY_STORE_URL').replace(/\.myshopify\.com$/, '') || 'our store';
@@ -63,10 +69,10 @@ function failureReason(e) {
 
 async function sendMail(to, mail) {
   const user = env('GMAIL_USER').trim();
-  const replyTo = env('EMAIL_REPLY_TO');
+  const replyTo = setting('replyTo', 'EMAIL_REPLY_TO');
   const mailto = `<mailto:${replyTo || user}?subject=unsubscribe>`;
   return transport().sendMail({
-    from: { name: env('EMAIL_FROM_NAME') || storeName(), address: user },
+    from: { name: setting('fromName', 'EMAIL_FROM_NAME') || storeName(), address: user },
     to,
     ...(replyTo ? { replyTo } : {}),
     subject: mail.subject, html: mail.html, text: mail.text,
@@ -126,7 +132,12 @@ const DEFAULTS = {
 function template() {
   let o = {};
   try { o = JSON.parse(env('EMAIL_TEMPLATE_JSON', '{}')) || {}; } catch { o = {}; }
-  return { ...DEFAULTS, ...o, design: { ...DEFAULTS.design, ...(o.design || {}) } };
+  const { design: sd, ...rest } = S;
+  const font = require('./_emailSettings').FONTS[sd && sd.font];
+  return {
+    ...DEFAULTS, ...o, ...rest,
+    design: { ...DEFAULTS.design, ...(o.design || {}), ...(sd || {}), ...(font ? { font } : {}) },
+  };
 }
 
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -149,9 +160,10 @@ function productList(titles, max = 5) {
 // items: [{ title, url, price (formatted), image }]
 function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
   const c = template(), d = c.design;
-  const name = env('EMAIL_FROM_NAME') || storeName();
-  const logo = /^https:\/\/[^\s"'<>]+$/.test(env('EMAIL_LOGO_URL')) ? env('EMAIL_LOGO_URL') : '';
-  const contact = env('EMAIL_REPLY_TO') || env('GMAIL_USER');
+  const name = setting('fromName', 'EMAIL_FROM_NAME') || storeName();
+  const logoUrl = setting('logoUrl', 'EMAIL_LOGO_URL');
+  const logo = /^https:\/\/[^\s"'<>]+$/.test(logoUrl) ? logoUrl : '';
+  const contact = setting('replyTo', 'EMAIL_REPLY_TO') || env('GMAIL_USER');
   const shown = items.slice(0, c.maxItems);
   const url = wishlistUrl();
   const vars = {
@@ -227,7 +239,7 @@ const SAMPLE_ITEMS = [
 ];
 
 module.exports = {
-  env, isConfigured, storeUrl, wishlistUrl, publicApiUrl,
+  env, use, setting, isConfigured, storeUrl, wishlistUrl, publicApiUrl,
   sendMail, verifyLogin, failureReason,
   unsubscribeUrl, unsubscribeToken, readToken,
   renderEmail, SAMPLE_ITEMS,

@@ -8,6 +8,10 @@
 //
 // Protected by ADMIN_PASSWORD env var (set in Vercel dashboard).
 
+const emailTab = require('./_emailTab');
+const email = require('./_email');
+const settingsStore = require('./_emailSettings');
+
 const SHOPIFY_STORE   = process.env.SHOPIFY_STORE_URL;
 const SHOPIFY_TOKEN   = process.env.SHOPIFY_ACCESS_TOKEN;
 const API_SECRET      = process.env.WISHLIST_API_SECRET || '';
@@ -32,6 +36,60 @@ async function gql(query, variables = {}) {
 }
 
 // ─── Main handler ─────────────────────────────────────────────────────────────
+// ─── Email tab API ────────────────────────────────────────────────────────────
+async function handleEmail(req, res) {
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 'no-store');
+  if (!API_SECRET || req.query.secret !== API_SECRET) return res.status(401).json({ error: 'Unauthorized' });
+
+  let body = req.body;
+  if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }
+  const kind = req.query.data;
+
+  if (kind === 'email' && req.method === 'POST') {
+    const settings = await settingsStore.save(body);
+    return res.status(200).json({ settings });
+  }
+
+  if (kind === 'email') {
+    const settings = await settingsStore.load();
+    let connection;
+    if (req.query.check) {
+      connection = { connected: false, from: email.env('GMAIL_USER') };
+      if (!email.isConfigured()) connection.error = 'GMAIL_USER and GMAIL_APP_PASSWORD are not set in Vercel yet';
+      else {
+        try { await email.verifyLogin(); connection.connected = true; }
+        catch (e) { connection.error = email.failureReason(e); }
+      }
+    }
+    return res.status(200).json({
+      settings, connection,
+      configured: email.isConfigured(), from: email.env('GMAIL_USER'), publicUrl: !!email.publicApiUrl(),
+    });
+  }
+
+  // preview + test render the template exactly as it is in the editor (saved or not)
+  const settings = settingsStore.sanitize(kind === 'email-test' ? body && body.settings : body);
+  email.use(settings);
+  const base = email.publicApiUrl();
+  const mail = email.renderEmail({
+    customerName: 'Asha', items: email.SAMPLE_ITEMS,
+    unsubscribeUrl: base ? base + '/api/unsubscribe?t=preview' : '',
+  });
+
+  if (kind === 'email-preview') return res.status(200).json({ subject: mail.subject, html: mail.html });
+
+  const to = String((body && body.to) || '').trim();
+  if (!/^[^s@]+@[^s@]+.[^s@]+$/.test(to)) return res.status(400).json({ error: 'Enter a valid email address' });
+  if (!email.isConfigured()) return res.status(200).json({ status: 'failed', reason: 'Gmail is not connected yet (see the Gmail connection box)' });
+  try {
+    await email.sendMail(to, { ...mail, subject: '[Test] ' + mail.subject });
+    return res.status(200).json({ status: 'sent' });
+  } catch (e) {
+    return res.status(200).json({ status: 'failed', reason: email.failureReason(e) });
+  }
+}
+
 module.exports = async function handler(req, res) {
   try {
     // JSON data endpoint
@@ -44,6 +102,11 @@ module.exports = async function handler(req, res) {
       res.setHeader('Content-Type', 'application/json');
       res.setHeader('Cache-Control', 'no-store');
       return res.status(200).json({ customers });
+    }
+
+    // Email tab: settings, live preview, test email
+    if (['email', 'email-preview', 'email-test'].includes(req.query.data)) {
+      return await handleEmail(req, res);
     }
 
     // HTML dashboard
@@ -322,6 +385,7 @@ html,body{font-family:'Inter',sans-serif;background:#fff;color:#0a0a0a;-webkit-f
   .grid3{grid-template-columns:1fr}
   .main{padding:24px 20px 60px}
 }
+${emailTab.css}
 </style>
 </head>
 <body>
@@ -349,6 +413,7 @@ html,body{font-family:'Inter',sans-serif;background:#fff;color:#0a0a0a;-webkit-f
     <nav class="topnav">
       <a class="nav-item active" id="nav-overview" onclick="showScreen('overview')">Overview</a>
       <a class="nav-item" id="nav-customers-full" onclick="showScreen('customers-full')">Customers</a>
+      <a class="nav-item" id="nav-email" onclick="showScreen('email')">Email</a>
     </nav>
     <div class="topbar-right">
       <button class="signout-btn" onclick="doLogout()">Sign out</button>
@@ -450,6 +515,9 @@ html,body{font-family:'Inter',sans-serif;background:#fff;color:#0a0a0a;-webkit-f
         <div id="tbl-body"></div>
       </div>
     </div>
+
+    <!-- EMAIL -->
+    ${emailTab.html}
 
     <!-- CUSTOMER DETAIL -->
     <div id="screen-customer-detail" class="screen" style="display:none">
@@ -655,19 +723,20 @@ html,body{font-family:'Inter',sans-serif;background:#fff;color:#0a0a0a;-webkit-f
   // ─── Screen routing ───────────────────────────────────────
   function showScreen(name) {
     if (name !== 'customer-detail') PREV_SCREEN = name;
-    ['overview', 'customers-full', 'customer-detail'].forEach(s => {
+    ['overview', 'customers-full', 'customer-detail', 'email'].forEach(s => {
       const el = $('screen-' + s);
       if (el) el.style.display = 'none';
     });
     const target = $('screen-' + name);
     if (target) target.style.display = 'block';
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    const map = { 'overview': 'nav-overview', 'customers-full': 'nav-customers-full' };
+    const map = { 'overview': 'nav-overview', 'customers-full': 'nav-customers-full', 'email': 'nav-email' };
     const navKey = name === 'customer-detail'
       ? (PREV_SCREEN === 'customers-full' ? 'nav-customers-full' : 'nav-overview')
       : map[name];
     if (navKey && $(navKey)) $(navKey).classList.add('active');
     if (name === 'customers-full') renderTable();
+    if (name === 'email' && window.initEmailTab) window.initEmailTab(CURRENT_SECRET);
   }
 
   // ─── Login ────────────────────────────────────────────────
@@ -1159,6 +1228,9 @@ html,body{font-family:'Inter',sans-serif;background:#fff;color:#0a0a0a;-webkit-f
     }
   })();
 })();
+</script>
+<script>
+${emailTab.js}
 </script>
 </body>
 </html>`;

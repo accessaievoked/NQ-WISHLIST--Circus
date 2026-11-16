@@ -7,6 +7,7 @@
 // Auth: Vercel Cron sends "Authorization: Bearer <CRON_SECRET>". You can also call it by hand:
 //   /api/cron-reminders?secret=<WISHLIST_API_SECRET>[&dry=1]
 const email = require('./_email');
+const settingsStore = require('./_emailSettings');
 const { fetchAllEntries, updateEntry, money } = require('./_shopify');
 
 const HOUR = 3600000, DAY = 86400000;
@@ -20,8 +21,11 @@ module.exports = async function handler(req, res) {
   if (!ok) return res.status(401).json({ error: 'Unauthorized' });
   if (!email.isConfigured()) return res.status(200).json({ skipped: 'Gmail is not connected (set GMAIL_USER and GMAIL_APP_PASSWORD)' });
 
-  const delay = Number(email.env('REMINDER_DELAY_HOURS', '24')) * HOUR;
-  const gap = Number(email.env('REMINDER_MIN_GAP_DAYS', '3')) * DAY;
+  const cfg = await settingsStore.load();
+  email.use(cfg);
+  if (!cfg.enabled && !req.query.force) return res.status(200).json({ skipped: 'Email reminders are turned off (admin → Email tab)' });
+  const delay = cfg.delayHours * HOUR;
+  const gap = cfg.minGapDays * DAY;
   const dry = !!req.query.dry;
   const now = Date.now();
 
