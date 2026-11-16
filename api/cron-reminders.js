@@ -1,16 +1,16 @@
 // Sends the wishlist reminder emails. Runs on a schedule (see vercel.json "crons").
 //
-// A customer is emailed when: they left an email address, haven't unsubscribed, their oldest saved item is older than
-// REMINDER_DELAY_HOURS (default 24), and they haven't been emailed in the last REMINDER_MIN_GAP_DAYS (default 3).
+// A customer is emailed when: they left an email address, haven't unsubscribed, their oldest unreminded item is older than
+// the "Send after" hours, and they haven't been emailed in the last "Gap" days (both set in the admin's Email tab).
 // Each entry gets a `reminded_at` stamp so nobody is emailed twice for the same items.
 //
 // Auth: Vercel Cron sends "Authorization: Bearer <CRON_SECRET>". You can also call it by hand:
 //   /api/cron-reminders?secret=<WISHLIST_API_SECRET>[&dry=1]
 const email = require('./_email');
 const settingsStore = require('./_emailSettings');
-const { fetchAllEntries, updateEntry, money } = require('./_shopify');
+const { fetchAllEntries } = require('./_shopify');
+const { due, send } = require('./_reminders');
 
-const HOUR = 3600000, DAY = 86400000;
 const API_SECRET = process.env.WISHLIST_API_SECRET || '';
 const CRON_SECRET = process.env.CRON_SECRET || '';
 const MAX_EMAILS_PER_RUN = 40; // stays well inside the function time limit; the next run picks up the rest
@@ -24,10 +24,7 @@ module.exports = async function handler(req, res) {
   const cfg = await settingsStore.load();
   email.use(cfg);
   if (!cfg.enabled && !req.query.force) return res.status(200).json({ skipped: 'Email reminders are turned off (admin → Email tab)' });
-  const delay = cfg.delayHours * HOUR;
-  const gap = cfg.minGapDays * DAY;
   const dry = !!req.query.dry;
-  const now = Date.now();
 
   try {
     const entries = await fetchAllEntries();
@@ -45,37 +42,11 @@ module.exports = async function handler(req, res) {
 
     for (const [addr, rows] of byEmail) {
       if (result.sent + result.failed >= MAX_EMAILS_PER_RUN) break;
-
-      if (rows.some((r) => r.unsubscribed === 'true')) { result.skipped++; continue; }
-      const lastSent = Math.max(0, ...rows.map((r) => Date.parse(r.reminded_at) || 0));
-      if (lastSent && now - lastSent < gap) { result.skipped++; continue; }
-
-      // only items saved since the last reminder, and only once the delay has passed
-      const fresh = rows
-        .filter((r) => !r.reminded_at)
-        .sort((a, b) => (Date.parse(b.added_at) || 0) - (Date.parse(a.added_at) || 0));
-      if (!fresh.length) { result.skipped++; continue; }
-      const oldest = Math.min(...fresh.map((r) => Date.parse(r.added_at) || now));
-      if (now - oldest < delay) { result.skipped++; continue; }
-
-      const base = email.storeUrl();
-      const items = fresh.map((r) => ({
-        title: r.product_title || 'Saved item',
-        url: r.product_handle ? `${base}/products/${r.product_handle}` : email.wishlistUrl(),
-        image: r.product_image || null,
-        price: money(r.product_price),
-      }));
-      const mail = email.renderEmail({
-        customerName: (fresh.find((r) => r.customer_name) || {}).customer_name,
-        items,
-        unsubscribeUrl: email.unsubscribeUrl(addr),
-      });
-
+      const d = due(rows, cfg);
+      if (d.skip) { result.skipped++; continue; }
       if (dry) { result.sent++; continue; }
       try {
-        await email.sendMail(addr, mail);
-        const stamp = new Date().toISOString();
-        for (const r of fresh) await updateEntry(r.id, { reminded_at: stamp });
+        await send(addr, d.fresh);
         result.sent++;
       } catch (e) {
         result.failed++;

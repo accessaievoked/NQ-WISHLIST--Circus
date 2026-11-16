@@ -1,0 +1,61 @@
+// Reminder logic shared by the daily cron and the "send straight away" path (delay = 0 hours).
+const email = require('./_email');
+const settingsStore = require('./_emailSettings');
+const { fetchAllEntries, updateEntry, money } = require('./_shopify');
+
+const HOUR = 3600000, DAY = 86400000;
+
+// Decides whether this person is due a reminder, from their entries. Returns { fresh } (entries to email) or { skip: reason }.
+function due(rows, cfg, now = Date.now()) {
+  if (rows.some((r) => r.unsubscribed === 'true')) return { skip: 'unsubscribed' };
+  const lastSent = Math.max(0, ...rows.map((r) => Date.parse(r.reminded_at) || 0));
+  if (lastSent && now - lastSent < cfg.minGapDays * DAY) return { skip: 'emailed recently' };
+  // only items saved since the last reminder, once the delay has passed
+  const fresh = rows
+    .filter((r) => !r.reminded_at)
+    .sort((a, b) => (Date.parse(b.added_at) || 0) - (Date.parse(a.added_at) || 0));
+  if (!fresh.length) return { skip: 'nothing new to send' };
+  const oldest = Math.min(...fresh.map((r) => Date.parse(r.added_at) || now));
+  if (now - oldest < cfg.delayHours * HOUR) return { skip: 'not due yet' };
+  return { fresh };
+}
+
+// Builds and sends one reminder, then stamps the entries so it is never sent twice.
+async function send(addr, fresh) {
+  const base = email.storeUrl();
+  const items = fresh.map((r) => ({
+    title: r.product_title || 'Saved item',
+    url: r.product_handle ? `${base}/products/${r.product_handle}` : email.wishlistUrl(),
+    image: r.product_image || null,
+    price: money(r.product_price),
+  }));
+  const mail = email.renderEmail({
+    customerName: (fresh.find((r) => r.customer_name) || {}).customer_name,
+    items,
+    unsubscribeUrl: email.unsubscribeUrl(addr),
+  });
+  await email.sendMail(addr, mail);
+  const stamp = new Date().toISOString();
+  for (const r of fresh) await updateEntry(r.id, { reminded_at: stamp });
+}
+
+// Called right after a shopper saves an item. Sends at once only when the store set "Send after" to 0 hours;
+// otherwise the daily cron picks it up. Never throws: a failed email must not break saving to the wishlist.
+async function sendNowIfInstant(addr) {
+  try {
+    if (!email.isConfigured()) return { sent: false, why: 'gmail not connected' };
+    const cfg = await settingsStore.load();
+    if (!cfg.enabled || cfg.delayHours !== 0) return { sent: false, why: 'not instant' };
+    email.use(cfg);
+    const rows = (await fetchAllEntries()).filter((r) => String(r.customer_email || '').trim().toLowerCase() === addr);
+    const d = due(rows, cfg);
+    if (d.skip) return { sent: false, why: d.skip };
+    await send(addr, d.fresh);
+    return { sent: true };
+  } catch (e) {
+    console.error('[Instant reminder]', e.message);
+    return { sent: false, why: 'error' };
+  }
+}
+
+module.exports = { due, send, sendNowIfInstant };
