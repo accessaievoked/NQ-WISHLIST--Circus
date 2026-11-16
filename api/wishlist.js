@@ -86,7 +86,7 @@ async function addToWishlist(req, res) {
   const {
     phone, product_id, product_title,
     product_handle, variant_id, product_image, product_price,
-    customer_name,
+    customer_name, customer_email,
   } = req.body || {};
 
   if (!phone || !product_id) {
@@ -97,6 +97,10 @@ async function addToWishlist(req, res) {
   if (cleanPhone.length < 7) {
     return res.status(400).json({ error: 'Invalid phone number' });
   }
+
+  // Optional email address (used for email reminders). Ignored if it doesn't look like an email.
+  const cleanEmail = String(customer_email || '').trim().toLowerCase().substring(0, 200);
+  const emailOk = /^[^s@<>,;]+@[^s@<>,;]+.[^s@<>,;]+$/.test(cleanEmail);
 
   // Prevent duplicate entries
   const existingId = await findEntry(cleanPhone, String(product_id));
@@ -118,6 +122,7 @@ async function addToWishlist(req, res) {
       fields: [
         { key: 'phone',           value: cleanPhone },
         { key: 'customer_name',   value: customer_name    || '' },
+        { key: 'customer_email',  value: emailOk ? cleanEmail : '' },
         { key: 'product_id',      value: String(product_id) },
         { key: 'product_title',   value: product_title   || '' },
         { key: 'product_handle',  value: product_handle  || '' },

@@ -25,10 +25,16 @@ async function gql(query, variables = {}) {
   return json.data;
 }
 
-// Adds the customer_name field to an EXISTING wishlist_entry definition
-// (needed for stores that already ran setup before this field existed).
-// Safe to call repeatedly — checks first and no-ops if already present.
-async function ensureCustomerNameField() {
+// Adds any missing fields to an EXISTING wishlist_entry definition (for stores that already ran setup earlier).
+// Safe to call repeatedly: only creates fields that are not there yet.
+const FIELDS_TO_ENSURE = [
+  { key: 'customer_name',  name: 'Customer Name' },
+  { key: 'customer_email', name: 'Customer Email' },            // email reminders
+  { key: 'reminded_at',    name: 'Reminder Sent At' },          // email reminders
+  { key: 'unsubscribed',   name: 'Unsubscribed From Email' },   // email reminders
+];
+
+async function ensureFields() {
   const lookup = await gql(`
     query {
       metaobjectDefinitionByType(type: "wishlist_entry") {
@@ -39,13 +45,14 @@ async function ensureCustomerNameField() {
   `);
 
   const def = lookup.metaobjectDefinitionByType;
-  if (!def) return { added: false, reason: 'wishlist_entry definition not found yet' };
+  if (!def) return { added: [], reason: 'wishlist_entry definition not found yet' };
 
-  const alreadyHasField = def.fieldDefinitions.some(f => f.key === 'customer_name');
-  if (alreadyHasField) return { added: false, reason: 'customer_name field already exists' };
+  const have = new Set(def.fieldDefinitions.map(f => f.key));
+  const missing = FIELDS_TO_ENSURE.filter(f => !have.has(f.key));
+  if (!missing.length) return { added: [], reason: 'all fields already exist' };
 
   const result = await gql(
-    `mutation AddNameField($id: ID!, $definition: MetaobjectDefinitionUpdateInput!) {
+    `mutation AddFields($id: ID!, $definition: MetaobjectDefinitionUpdateInput!) {
        metaobjectDefinitionUpdate(id: $id, definition: $definition) {
          metaobjectDefinition { id fieldDefinitions { key name } }
          userErrors { field message code }
@@ -54,9 +61,9 @@ async function ensureCustomerNameField() {
     {
       id: def.id,
       definition: {
-        fieldDefinitions: [
-          { create: { key: 'customer_name', name: 'Customer Name', type: 'single_line_text_field', required: false } },
-        ],
+        fieldDefinitions: missing.map(f => ({
+          create: { key: f.key, name: f.name, type: 'single_line_text_field', required: false },
+        })),
       },
     }
   );
@@ -64,7 +71,7 @@ async function ensureCustomerNameField() {
   const errors = result.metaobjectDefinitionUpdate.userErrors;
   if (errors.length) throw new Error(JSON.stringify(errors));
 
-  return { added: true, definition: result.metaobjectDefinitionUpdate.metaobjectDefinition };
+  return { added: missing.map(f => f.key) };
 }
 
 module.exports = async function handler(req, res) {
@@ -94,6 +101,9 @@ module.exports = async function handler(req, res) {
           fieldDefinitions: [
             { key: 'phone',          name: 'Customer Phone',   type: 'single_line_text_field',  required: true  },
             { key: 'customer_name',  name: 'Customer Name',    type: 'single_line_text_field',  required: false },
+            { key: 'customer_email', name: 'Customer Email',   type: 'single_line_text_field',  required: false },
+            { key: 'reminded_at',    name: 'Reminder Sent At', type: 'single_line_text_field',  required: false },
+            { key: 'unsubscribed',   name: 'Unsubscribed From Email', type: 'single_line_text_field', required: false },
             { key: 'product_id',     name: 'Product ID',       type: 'single_line_text_field',  required: true  },
             { key: 'product_title',  name: 'Product Title',    type: 'single_line_text_field',  required: false },
             { key: 'product_handle', name: 'Product Handle',   type: 'single_line_text_field',  required: false },
@@ -111,11 +121,11 @@ module.exports = async function handler(req, res) {
       // Code TAKEN means the type already exists — patch in any new fields
       const alreadyExists = result.userErrors.some(e => e.code === 'TAKEN');
       if (alreadyExists) {
-        const nameFieldResult = await ensureCustomerNameField();
+        const fieldsResult = await ensureFields();
         return res.status(200).json({
           success: true,
           message: 'Metaobject definition already exists. You are all set!',
-          customer_name_field: nameFieldResult,
+          fields: fieldsResult,
         });
       }
       return res.status(400).json({ errors: result.userErrors });
