@@ -133,6 +133,7 @@ function client() {
     $('em-check').onclick = check_;
     $('em-test').onclick = test;
     refreshPreview();
+    if (info.configured) check_(); // verify the Gmail login right away, no need to press the button
   }
 
   function onInput(e) {

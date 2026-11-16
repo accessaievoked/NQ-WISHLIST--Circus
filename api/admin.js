@@ -80,7 +80,7 @@ async function handleEmail(req, res) {
   if (kind === 'email-preview') return res.status(200).json({ subject: mail.subject, html: mail.html });
 
   const to = String((body && body.to) || '').trim();
-  if (!/^[^s@]+@[^s@]+.[^s@]+$/.test(to)) return res.status(400).json({ error: 'Enter a valid email address' });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return res.status(400).json({ error: 'Enter a valid email address' });
   if (!email.isConfigured()) return res.status(200).json({ status: 'failed', reason: 'Gmail is not connected yet (see the Gmail connection box)' });
   try {
     await email.sendMail(to, { ...mail, subject: '[Test] ' + mail.subject });
