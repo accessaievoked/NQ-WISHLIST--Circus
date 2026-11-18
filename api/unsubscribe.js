@@ -1,4 +1,4 @@
-// Public unsubscribe page, linked from every reminder email (and used by Gmail's one-click "Unsubscribe" button).
+// Public unsubscribe page, linked from every reminder email (and used by the mail app's one-click "Unsubscribe" button).
 // Marks every wishlist entry for that email as unsubscribed, so no reminder is ever sent to it again.
 const { readToken } = require('./_email');
 const { fetchAllEntries, updateEntry } = require('./_shopify');

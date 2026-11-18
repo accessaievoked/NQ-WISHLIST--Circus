@@ -1,9 +1,13 @@
-// Shared email helpers (Gmail SMTP + HTML template + unsubscribe links).
+// Shared email helpers (SMTP, Zoho Mail by default + HTML template + unsubscribe links).
 // Ported from the nq-wishlist app. The leading underscore keeps Vercel from exposing this file as a route.
 //
 // Env vars:
-//   GMAIL_USER          Gmail / Google Workspace address that sends the emails
-//   GMAIL_APP_PASSWORD  16-character Google App Password (myaccount.google.com/apppasswords)
+//   SMTP_USER           Zoho Mail address that sends the emails (e.g. care@yourstore.com)
+//   SMTP_PASSWORD       that mailbox's password, or a Zoho Application-Specific Password if 2FA is on
+//   SMTP_HOST           (optional) default smtp.zoho.com. Use smtp.zoho.eu / smtp.zoho.in / smtp.zoho.com.au / smtp.zoho.jp
+//                       if your Zoho account lives in another data centre
+//   SMTP_PORT           (optional) default 465 (SSL). 587 uses STARTTLS
+//   (GMAIL_USER / GMAIL_APP_PASSWORD are still read as fallbacks for older setups)
 //   EMAIL_FROM_NAME     (optional) sender name, defaults to the store name
 //   EMAIL_REPLY_TO      (optional) reply-to address
 //   STORE_NAME          (optional) shown in the email, defaults to the myshopify subdomain
@@ -41,17 +45,19 @@ function publicApiUrl() {
   const u = (env('PUBLIC_API_URL') || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : '')).replace(/\/+$/, '');
   return u.startsWith('https://') ? u : '';
 }
+const mailUser = () => (env('SMTP_USER') || env('GMAIL_USER')).trim();
+const mailPass = () => env('SMTP_PASSWORD') || env('GMAIL_APP_PASSWORD');
+const smtpHost = () => env('SMTP_HOST', 'smtp.zoho.com').trim();
 function isConfigured() {
-  return !!(env('GMAIL_USER') && env('GMAIL_APP_PASSWORD'));
+  return !!(mailUser() && mailPass());
 }
 
-// ─── Gmail ────────────────────────────────────────────────────────────────────
+// ─── SMTP (Zoho Mail) ─────────────────────────────────────────────────────────
 function transport() {
-  // Google shows the password in four groups of four; keep letters and digits only
-  const pass = env('GMAIL_APP_PASSWORD').replace(/[^a-z0-9]/gi, '');
+  const port = Number(env('SMTP_PORT')) || 465;
   return nodemailer.createTransport({
-    host: 'smtp.gmail.com', port: 465, secure: true,
-    auth: { user: env('GMAIL_USER').trim(), pass },
+    host: smtpHost(), port, secure: port === 465,
+    auth: { user: mailUser(), pass: mailPass() },
     connectionTimeout: 10000, greetingTimeout: 10000, socketTimeout: 20000,
   });
 }
@@ -59,16 +65,17 @@ function transport() {
 function failureReason(e) {
   const m = String((e && e.message) || e), code = e && e.code, resp = Number(e && e.responseCode) || 0;
   if (code === 'EAUTH' || resp === 535 || /Invalid login|Username and Password not accepted|BadCredentials/i.test(m))
-    return 'Gmail did not accept the login. Check GMAIL_USER and create a new App Password';
-  if (/5\.4\.5|daily user sending|exceeded/i.test(m)) return "Gmail's daily sending limit was reached. It resumes within 24 hours";
-  if (resp === 550 || resp === 553 || /5\.1\.1|does not exist|no such user/i.test(m)) return 'Gmail could not deliver to this address';
-  if (code === 'ETIMEDOUT' || /timed? ?out/i.test(m)) return 'Gmail did not answer in time';
-  if (code === 'ECONNECTION' || code === 'EDNS' || /ENOTFOUND|ECONN|EAI_AGAIN/i.test(m)) return "Couldn't reach Gmail";
+    return 'Zoho did not accept the login. Check SMTP_USER and SMTP_PASSWORD (use an Application-Specific Password if 2FA is on) and that SMTP_HOST matches your Zoho region, e.g. smtp.zoho.eu';
+  if (resp === 553 || /sender|not allowed to send|relay/i.test(m)) return 'Zoho rejected the sender address. The From address must be the SMTP_USER mailbox or one of its aliases';
+  if (resp === 550 || /5\.1\.1|does not exist|no such user/i.test(m)) return 'Zoho could not deliver to this address';
+  if (resp === 554 || /daily|limit|exceeded|too many/i.test(m)) return "Zoho's sending limit was reached. Try again later";
+  if (code === 'ETIMEDOUT' || /timed? ?out/i.test(m)) return 'Zoho did not answer in time';
+  if (code === 'ECONNECTION' || code === 'EDNS' || /ENOTFOUND|ECONN|EAI_AGAIN/i.test(m)) return "Couldn't reach " + smtpHost();
   return m.replace(/\s+/g, ' ').slice(0, 160);
 }
 
 async function sendMail(to, mail) {
-  const user = env('GMAIL_USER').trim();
+  const user = mailUser();
   const replyTo = setting('replyTo', 'EMAIL_REPLY_TO');
   const mailto = `<mailto:${replyTo || user}?subject=unsubscribe>`;
   return transport().sendMail({
@@ -76,7 +83,7 @@ async function sendMail(to, mail) {
     to,
     ...(replyTo ? { replyTo } : {}),
     subject: mail.subject, html: mail.html, text: mail.text,
-    // with a public link, mail apps (Gmail's "Unsubscribe" button) can unsubscribe in one click
+    // with a public link, mail apps (the mail app's "Unsubscribe" button) can unsubscribe in one click
     headers: mail.unsubscribeUrl
       ? { 'List-Unsubscribe': `<${mail.unsubscribeUrl}>, ${mailto}`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' }
       : { 'List-Unsubscribe': mailto },
@@ -163,7 +170,7 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
   const name = setting('fromName', 'EMAIL_FROM_NAME') || storeName();
   const logoUrl = setting('logoUrl', 'EMAIL_LOGO_URL');
   const logo = /^https:\/\/[^\s"'<>]+$/.test(logoUrl) ? logoUrl : '';
-  const contact = setting('replyTo', 'EMAIL_REPLY_TO') || env('GMAIL_USER');
+  const contact = setting('replyTo', 'EMAIL_REPLY_TO') || mailUser();
   const shown = items.slice(0, c.maxItems);
   const url = wishlistUrl();
   const vars = {
@@ -239,7 +246,7 @@ const SAMPLE_ITEMS = [
 ];
 
 module.exports = {
-  env, use, setting, isConfigured, storeUrl, wishlistUrl, publicApiUrl,
+  env, use, setting, isConfigured, mailUser, storeUrl, wishlistUrl, publicApiUrl,
   sendMail, verifyLogin, failureReason,
   unsubscribeUrl, unsubscribeToken, readToken,
   renderEmail, SAMPLE_ITEMS,

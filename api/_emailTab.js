@@ -1,4 +1,4 @@
-// The "Email" tab of the admin dashboard: Gmail connection status, template design with a live preview,
+// The "Email" tab of the admin dashboard: Zoho Mail connection status, template design with a live preview,
 // reminder settings and a test email. admin.js pastes css / html / js into the page.
 
 const css = `
@@ -80,12 +80,13 @@ function client() {
     $('em-root').innerHTML =
       '<div class="em-grid"><div>' +
 
-      '<div class="em-card"><h3>Gmail connection</h3>' +
+      '<div class="em-card"><h3>Email connection (Zoho Mail)</h3>' +
       '<div class="em-status"><span class="em-dot" id="em-dot"></span><span id="em-conn">' + (info.configured ? 'Login found for <b>' + esc(info.from) + '</b>' : 'Not connected yet') + '</span>' +
       '<button class="em-btn ghost" id="em-check" type="button">Check connection</button></div>' +
-      '<div class="em-steps">Emails are sent from your own Gmail. To connect it, add these in <b>Vercel → your project → Settings → Environment Variables</b>, then redeploy:<br>' +
-      '<code>GMAIL_USER</code> your Gmail / Google Workspace address<br>' +
-      '<code>GMAIL_APP_PASSWORD</code> a 16-character App Password from <b>myaccount.google.com/apppasswords</b> (2-Step Verification must be on)<br>' +
+      '<div class="em-steps">Emails are sent from your own Zoho Mail account. To connect it, add these in <b>Vercel → your project → Settings → Environment Variables</b>, then redeploy:<br>' +
+      '<code>SMTP_USER</code> your Zoho mailbox address, e.g. care@yourstore.com<br>' +
+      '<code>SMTP_PASSWORD</code> the mailbox password, or an Application-Specific Password from <b>accounts.zoho.com → Security → App Passwords</b> if two-factor is on<br>' +
+      '<code>SMTP_HOST</code> optional, default smtp.zoho.com. Use smtp.zoho.eu, smtp.zoho.in, smtp.zoho.com.au or smtp.zoho.jp if your Zoho account is in that region<br>' +
       '<code>PUBLIC_API_URL</code> this site\'s address, e.g. https://your-app.vercel.app (needed for the Unsubscribe link)<br>' +
       '<code>CRON_SECRET</code> any random text<br>' +
       'Your password is kept in Vercel, never in this page or in Shopify.' +
@@ -110,7 +111,7 @@ function client() {
       check('showList', 'Show the list of saved products') + check('showPrice', 'Show prices') +
       '<div class="em-row">' + field('listTitle', 'List title', 'text') + field('buttonText', 'Button text', 'text', { hint: 'Empty hides the button' }) + '</div>' +
       '<div class="em-row">' + field('footerTitle', 'Footer title', 'text') + '</div>' +
-      '<div class="em-row">' + field('footerMessage', 'Footer message', 'textarea', { rows: 3, hint: '{email} becomes your reply-to / Gmail address' }) + '</div>' +
+      '<div class="em-row">' + field('footerMessage', 'Footer message', 'textarea', { rows: 3, hint: '{email} becomes your reply-to / sender address' }) + '</div>' +
       '<div class="em-row">' + field('footerNote', 'Footer note', 'textarea', { rows: 3 }) + '</div></div>' +
 
       '<div class="em-card"><h3>Design</h3><div class="em-row">' +
@@ -133,7 +134,7 @@ function client() {
     $('em-check').onclick = check_;
     $('em-test').onclick = test;
     refreshPreview();
-    if (info.configured) check_(); // verify the Gmail login right away, no need to press the button
+    if (info.configured) check_(); // verify the Zoho login right away, no need to press the button
   }
 
   function onInput(e) {

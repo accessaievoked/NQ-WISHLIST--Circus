@@ -1,5 +1,5 @@
 // Email template + reminder settings, edited from the "Email" tab of the admin and stored in your Shopify store
-// (Content → Metaobjects → "Wishlist Email Settings"). The Gmail login is NOT stored here: it stays in Vercel env vars.
+// (Content → Metaobjects → "Wishlist Email Settings"). The Zoho login is NOT stored here: it stays in Vercel env vars.
 const { gql } = require('./_shopify');
 
 const TYPE = 'wishlist_email_settings';

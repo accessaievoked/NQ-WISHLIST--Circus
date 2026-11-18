@@ -19,7 +19,7 @@ module.exports = async function handler(req, res) {
   const bearer = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
   const ok = (CRON_SECRET && bearer === CRON_SECRET) || (API_SECRET && req.query.secret === API_SECRET);
   if (!ok) return res.status(401).json({ error: 'Unauthorized' });
-  if (!email.isConfigured()) return res.status(200).json({ skipped: 'Gmail is not connected (set GMAIL_USER and GMAIL_APP_PASSWORD)' });
+  if (!email.isConfigured()) return res.status(200).json({ skipped: 'Zoho Mail is not connected (set SMTP_USER and SMTP_PASSWORD)' });
 
   const cfg = await settingsStore.load();
   email.use(cfg);

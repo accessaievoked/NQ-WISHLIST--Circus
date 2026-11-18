@@ -1,5 +1,5 @@
 // Email tools (protected by WISHLIST_API_SECRET).
-//   GET  /api/email?secret=...            -> is Gmail configured, and does Gmail accept the login?
+//   GET  /api/email?secret=...            -> is Zoho Mail configured, and does Zoho accept the login?
 //   GET  /api/email?secret=...&to=a@b.com -> sends a sample reminder ("[Test] ...") to that address
 //   GET  /api/email?secret=...&preview=1  -> shows the email in the browser
 const email = require('./_email');
@@ -26,7 +26,7 @@ module.exports = async function handler(req, res) {
   }
 
   if (!email.isConfigured()) {
-    return res.status(200).json({ connected: false, error: 'Set GMAIL_USER and GMAIL_APP_PASSWORD in the Vercel environment variables' });
+    return res.status(200).json({ connected: false, error: 'Set SMTP_USER and SMTP_PASSWORD in the Vercel environment variables' });
   }
 
   try {
@@ -36,7 +36,7 @@ module.exports = async function handler(req, res) {
   }
 
   const to = String(req.query.to || '').trim();
-  if (!to) return res.status(200).json({ connected: true, from: email.env('GMAIL_USER') });
+  if (!to) return res.status(200).json({ connected: true, from: email.mailUser() });
   if (!isEmail(to)) return res.status(400).json({ error: 'Enter a valid email address in ?to=' });
 
   try {

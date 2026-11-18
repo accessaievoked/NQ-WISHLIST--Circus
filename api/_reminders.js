@@ -43,7 +43,7 @@ async function send(addr, fresh) {
 // otherwise the daily cron picks it up. Never throws: a failed email must not break saving to the wishlist.
 async function sendNowIfInstant(addr) {
   try {
-    if (!email.isConfigured()) return { sent: false, why: 'gmail not connected' };
+    if (!email.isConfigured()) return { sent: false, why: 'email not connected' };
     const cfg = await settingsStore.load();
     if (!cfg.enabled || cfg.delayHours !== 0) return { sent: false, why: 'not instant' };
     email.use(cfg);

@@ -55,8 +55,8 @@ async function handleEmail(req, res) {
     const settings = await settingsStore.load();
     let connection;
     if (req.query.check) {
-      connection = { connected: false, from: email.env('GMAIL_USER') };
-      if (!email.isConfigured()) connection.error = 'GMAIL_USER and GMAIL_APP_PASSWORD are not set in Vercel yet';
+      connection = { connected: false, from: email.mailUser() };
+      if (!email.isConfigured()) connection.error = 'SMTP_USER and SMTP_PASSWORD are not set in Vercel yet';
       else {
         try { await email.verifyLogin(); connection.connected = true; }
         catch (e) { connection.error = email.failureReason(e); }
@@ -64,7 +64,7 @@ async function handleEmail(req, res) {
     }
     return res.status(200).json({
       settings, connection,
-      configured: email.isConfigured(), from: email.env('GMAIL_USER'), publicUrl: !!email.publicApiUrl(),
+      configured: email.isConfigured(), from: email.mailUser(), publicUrl: !!email.publicApiUrl(),
     });
   }
 
@@ -81,7 +81,7 @@ async function handleEmail(req, res) {
 
   const to = String((body && body.to) || '').trim();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return res.status(400).json({ error: 'Enter a valid email address' });
-  if (!email.isConfigured()) return res.status(200).json({ status: 'failed', reason: 'Gmail is not connected yet (see the Gmail connection box)' });
+  if (!email.isConfigured()) return res.status(200).json({ status: 'failed', reason: 'Zoho Mail is not connected yet (see the Email connection box)' });
   try {
     await email.sendMail(to, { ...mail, subject: '[Test] ' + mail.subject });
     return res.status(200).json({ status: 'sent' });
