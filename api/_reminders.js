@@ -5,6 +5,15 @@ const { fetchAllEntries, updateEntry, money } = require('./_shopify');
 
 const HOUR = 3600000, DAY = 86400000;
 
+// Shopify image links are often protocol-relative (//cdn.shopify.com/...), which mail apps cannot load.
+function httpsUrl(u) {
+  u = String(u || '').trim();
+  if (!u) return null;
+  if (u.startsWith('//')) return 'https:' + u;
+  if (/^https?:\/\//i.test(u)) return u.replace(/^http:/i, 'https:');
+  return 'https://' + u.replace(/^\/+/, '');
+}
+
 // Decides whether this person is due a reminder, from their entries. Returns { fresh } (entries to email) or { skip: reason }.
 function due(rows, cfg, now = Date.now()) {
   if (rows.some((r) => r.unsubscribed === 'true')) return { skip: 'unsubscribed' };
@@ -26,7 +35,7 @@ async function send(addr, fresh) {
   const items = fresh.map((r) => ({
     title: r.product_title || 'Saved item',
     url: r.product_handle ? `${base}/products/${r.product_handle}` : email.wishlistUrl(),
-    image: r.product_image || null,
+    image: httpsUrl(r.product_image),
     price: money(r.product_price),
   }));
   const mail = email.renderEmail({
