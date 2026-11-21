@@ -195,6 +195,12 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
   const imgTag = (u, w) => `<img src="${esc(u)}" alt="" width="${w}" style="display:block;width:100%;max-width:${w}px;height:auto;border:0">`;
   const linked = (u, w, link) => (link ? `<a href="${esc(link)}" style="text-decoration:none">${imgTag(u, w)}</a>` : imgTag(u, w));
 
+  // total of the shown items, only when every price can be read (prices are plain text like "₹1,499")
+  const amounts = shown.map((i) => parseFloat(String(i.price || '').replace(/[^0-9.]/g, '')));
+  const prefix = ((shown[0] && String(shown[0].price || '').match(/^[^d]*/)) || [''])[0].trim();
+  const total = c.showPrice && shown.length && amounts.every((n) => Number.isFinite(n))
+    ? `${prefix}${amounts.reduce((a, b) => a + b, 0).toLocaleString(/₹|rs/i.test(prefix) ? 'en-IN' : 'en-US', { maximumFractionDigits: 2 })}` : '';
+
   const orderList = c.showList && shown.length ? `
     <tr><td style="padding:8px 32px 0">
       <div style="background:#f1f1f1;padding:12px 16px;font-size:12px;font-weight:bold;letter-spacing:.06em;text-transform:uppercase;color:${d.headingColor}">${esc(fill(c.listTitle))}</div>
@@ -205,6 +211,7 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
             <td width="56" valign="middle">${i.image ? `<img src="${esc(i.image)}" alt="" width="44" height="52" style="display:block;width:44px;height:52px;object-fit:cover;border:0">` : `<div style="width:44px;height:52px;background:#ececec"></div>`}</td>
             <td valign="middle" style="font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:${d.headingColor}"><a href="${esc(i.url)}" style="color:${d.headingColor};text-decoration:none;font-weight:bold">${esc(i.title)}</a></td>
           </tr></table></td>${c.showPrice ? `<td align="right" valign="middle" style="padding:12px 0;border-bottom:1px solid #eeeeee;font-size:${d.textSize}px;color:${d.headingColor};font-weight:bold;white-space:nowrap">${esc(i.price || '')}</td>` : ''}</tr>`).join('')}
+        ${total ? `<tr><td align="right" style="padding:14px 12px 0 0;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:${d.headingColor}">Total</td><td align="right" style="padding:14px 0 0;font-size:${d.textSize + 2}px;font-weight:bold;color:${d.headingColor};white-space:nowrap">${esc(total)}</td></tr>` : ''}
       </table></td></tr>` : '';
 
   const list = c.showList && shown.length ? `
@@ -233,6 +240,8 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
         ${unsub ? `<div style="margin-top:8px;font-size:12px"><a href="${esc(unsub)}" style="color:${ftrText};text-decoration:underline">Unsubscribe</a></div>` : ''}
       </td></tr>`;
 
+  const msgRow = `<tr><td align="${ord ? 'center' : 'left'}" style="padding:${ord ? '12px' : '0'} 32px 20px;font-size:${d.textSize}px;line-height:1.6;color:${d.textColor}">${paragraphs(fill(c.message)).map((p) => `<p style="margin:0 0 14px">${esc(p).replace(/\n/g, '<br>')}</p>`).join('')}</td></tr>`;
+
   const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f3f4f6;font-family:${d.font}">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6"><tr><td align="center" style="padding:24px 12px">
@@ -240,8 +249,10 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
 ${header}
 ${ord && c.heroImageUrl ? `<tr><td style="padding:0;line-height:0;font-size:0">${imgTag(c.heroImageUrl, 600)}</td></tr>` : `<tr><td align="${ord ? 'center' : 'left'}" style="padding:32px 32px 8px;font-size:${d.headingSize}px;line-height:1.25;font-weight:bold;color:${d.headingColor}">${esc(fill(c.heading))}</td></tr>`}
 ${ord && c.tagline ? `<tr><td align="center" style="padding:8px 32px 8px;font-size:${d.textSize}px;letter-spacing:.2em;text-transform:uppercase;color:${d.headingColor}">${esc(fill(c.tagline))}</td></tr>` : ''}
-<tr><td align="${ord ? 'center' : 'left'}" style="padding:${ord ? '12px' : '0'} 32px 20px;font-size:${d.textSize}px;line-height:1.6;color:${d.textColor}">${paragraphs(fill(c.message)).map((p) => `<p style="margin:0 0 14px">${esc(p).replace(/\n/g, '<br>')}</p>`).join('')}</td></tr>
-${ord ? orderList : list}
+${ord ? orderList : ''}
+${ord ? '' : msgRow}
+${ord ? msgRow : ''}
+${ord ? '' : list}
 ${button}
 <tr><td style="height:24px;line-height:24px;font-size:0">&nbsp;</td></tr>
 ${ord && c.promoImageUrl ? `<tr><td style="padding:0 32px 24px">${linked(c.promoImageUrl, 536, c.promoLink)}</td></tr>` : ''}
