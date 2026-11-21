@@ -268,16 +268,18 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
   const CDN = 'https://cdn.shopify.com/s/files/1/0750/2191/0293/files/';
   const ICONS = { whatsapp: [CDN + 'em-whatsapp.png?v=1706831088', 32], phone: [CDN + 'em-phone.png?v=1706831088', 30], email: [CDN + 'em-email.png?v=1706831088', 36] };
   const icon = (u, key, alt) => `<a href="${esc(u)}" target="_blank" style="display:inline-block;margin:0 8px;text-decoration:none"><img src="${ICONS[key][0]}" alt="${alt}" width="${ICONS[key][1]}" style="display:block;width:${ICONS[key][1]}px;height:auto;border:0"></a>`;
+  // WhatsApp falls back to the &Circus support chat so the icon always shows
+  const waLink = c.whatsappLink || 'https://api.whatsapp.com/send/?phone=9843137146&text=I+want+help+%26circus+&type=phone_number&app_absent=0';
   // **bold** in the help text, and the word WhatsApp becomes a link when a WhatsApp link is set
   const richSupport = (t) => lines(fill(t)).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
-    .replace(/WhatsApp/, c.whatsappLink ? `<a href="${esc(c.whatsappLink)}" target="_blank" style="color:${d.headingColor};text-decoration:underline">WhatsApp</a>` : 'WhatsApp');
+    .replace(/WhatsApp/, waLink ? `<a href="${esc(waLink)}" target="_blank" style="color:${d.headingColor};text-decoration:underline">WhatsApp</a>` : 'WhatsApp');
   const hasSupport = [c.supportText, c.supportLabel, c.supportEmail, c.supportPhone, c.supportHours, c.whatsappLink].some(Boolean);
   const support = hasSupport ? `<tr><td align="center" style="padding:8px 32px 20px;font-size:12px;line-height:1.6;color:${d.headingColor}">
       ${c.supportText ? `<div style="margin-bottom:14px">${richSupport(c.supportText)}</div>` : ''}
       ${c.supportLabel ? `<div style="margin-bottom:6px">${esc(fill(c.supportLabel))}</div>` : ''}
       ${c.supportEmail || c.supportPhone ? `<div style="font-size:14px;padding:6px 0;border-bottom:1px solid #b9c0e8;display:inline-block">${c.supportEmail ? `<a href="mailto:${esc(c.supportEmail)}" style="color:${d.headingColor};text-decoration:none">${esc(c.supportEmail)}</a>` : ''}${c.supportEmail && c.supportPhone ? ' &nbsp;&bull;&nbsp; ' : ''}${c.supportPhone ? `<a href="tel:${esc(phoneDial)}" style="color:${d.headingColor};text-decoration:none">${esc(c.supportPhone)}</a>` : ''}</div>` : ''}
       ${c.supportHours ? `<div style="margin-top:6px">${esc(c.supportHours)}</div>` : ''}
-      ${c.showSupportIcons !== false && (c.whatsappLink || phoneDial || c.supportEmail) ? `<div style="margin-top:14px">${c.whatsappLink ? icon(c.whatsappLink, 'whatsapp', 'WhatsApp') : ''}${phoneDial ? icon('tel:' + phoneDial, 'phone', 'Call') : ''}${c.supportEmail ? icon('mailto:' + c.supportEmail, 'email', 'Email') : ''}</div>` : ''}
+      ${c.showSupportIcons !== false && (waLink || phoneDial || c.supportEmail) ? `<div style="margin-top:14px">${waLink ? icon(waLink, 'whatsapp', 'WhatsApp') : ''}${phoneDial ? icon('tel:' + phoneDial, 'phone', 'Call') : ''}${c.supportEmail ? icon('mailto:' + c.supportEmail, 'email', 'Email') : ''}</div>` : ''}
     </td></tr>` : '';
 
   // white PNG icons (email apps do not show SVG); the name is the fallback if images are blocked
