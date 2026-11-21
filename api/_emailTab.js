@@ -102,7 +102,8 @@ function client() {
 
       '<div class="em-card"><h3>Sender</h3><div class="em-row">' +
       field('fromName', 'From name', 'text', { ph: 'Your store name' }) + field('replyTo', 'Reply-to email', 'email', { ph: 'care@yourstore.com' }) + '</div>' +
-      '<div class="em-row">' + field('logoUrl', 'Logo link (https)', 'text', { ph: 'https://…/logo.png', hint: 'Shown at the top. Leave empty to show the store name.' }) + '</div></div>' +
+      '<div class="em-row">' + field('logoUrl', 'Logo link (https)', 'text', { ph: 'https://…/logo.png', hint: 'Shown at the top. Leave empty to show the store name.' }) + '</div>' +
+      check('design.logoFull', 'Use the logo as the full header (full width, no header colour or padding)') + '</div>' +
 
       '<div class="em-card"><h3>Content</h3>' +
       '<div class="em-row">' + field('subject', 'Subject', 'text') + '</div>' +

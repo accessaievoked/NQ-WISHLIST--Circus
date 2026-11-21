@@ -129,7 +129,7 @@ const DEFAULTS = {
   footerNote: 'You are getting this because you saved items at {{store_name}}. You can stop these emails at any time with the link below.',
   maxItems: 5, showList: true, showPrice: true,
   design: {
-    corner: 8, headerBg: '#1f2937', footerBg: '#f3f4f6', buttonBg: '#1f2937', buttonText: '#ffffff',
+    corner: 8, headerBg: '#1f2937', logoFull: false, footerBg: '#f3f4f6', buttonBg: '#1f2937', buttonText: '#ffffff',
     headingColor: '#111111', textColor: '#444444', headingSize: 24, textSize: 15,
     font: "Arial, Helvetica, sans-serif",
   },
@@ -186,7 +186,9 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
   const inEmail = (t) => esc(fill(t).replace(/\{email\}/g, contact));
   const hdrText = onColour(d.headerBg), ftrText = onColour(d.footerBg);
 
-  const header = `<tr><td align="center" style="background:${d.headerBg};padding:28px 24px;color:${hdrText};font-size:22px;font-weight:bold">${
+  const header = d.logoFull && logo
+    ? `<tr><td align="center" style="padding:0;line-height:0;font-size:0"><img src="${esc(logo)}" alt="${esc(name)}" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0"></td></tr>`
+    : `<tr><td align="center" style="background:${d.headerBg};padding:28px 24px;color:${hdrText};font-size:22px;font-weight:bold">${
     logo ? `<img src="${esc(logo)}" alt="${esc(name)}" height="44" style="display:inline-block;height:44px;width:auto;border:0">` : esc(name)}</td></tr>`;
 
   const list = c.showList && shown.length ? `

@@ -25,7 +25,7 @@ const DEFAULTS = {
   footerMessage: 'Just reply to this email or reach us at {email}. We are happy to help.',
   footerNote: 'You are getting this because you saved items at {{store_name}}. You can stop these emails at any time with the link below.',
   design: {
-    corner: 8, headerBg: '#1f2937', footerBg: '#f3f4f6', buttonBg: '#1f2937', buttonText: '#ffffff',
+    corner: 8, headerBg: '#1f2937', logoFull: false, footerBg: '#f3f4f6', buttonBg: '#1f2937', buttonText: '#ffffff',
     headingColor: '#111111', textColor: '#444444', headingSize: 24, textSize: 15, font: 'arial',
   },
 };
@@ -67,6 +67,7 @@ function sanitize(raw) {
     design: {
       corner: int(d.corner, 0, 24, DD.corner),
       headerBg: hex(d.headerBg, DD.headerBg),
+      logoFull: bool(d.logoFull, DD.logoFull),
       footerBg: hex(d.footerBg, DD.footerBg),
       buttonBg: hex(d.buttonBg, DD.buttonBg),
       buttonText: hex(d.buttonText, DD.buttonText),
