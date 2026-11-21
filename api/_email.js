@@ -201,6 +201,12 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
   const total = c.showPrice && shown.length && amounts.every((n) => Number.isFinite(n))
     ? `${prefix}${amounts.reduce((a, b) => a + b, 0).toLocaleString(/₹|rs/i.test(prefix) ? 'en-IN' : 'en-US', { maximumFractionDigits: 2 })}` : '';
 
+  const lbl = `font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:${d.headingColor}`;
+  const totalRows = total && c.showTotal !== false ? [
+    c.shippingText ? `<tr><td align="right" style="padding:14px 12px 0 0;${lbl}">Sub-total</td><td align="right" style="padding:14px 0 0;font-size:${d.textSize}px;color:${d.headingColor};white-space:nowrap">${esc(total)}</td></tr><tr><td align="right" style="padding:6px 12px 0 0;${lbl}">Shipping fee</td><td align="right" style="padding:6px 0 0;font-size:${d.textSize}px;color:${d.headingColor};white-space:nowrap">${esc(c.shippingText)}</td></tr>` : '',
+    `<tr><td align="right" style="padding:${c.shippingText ? '10px' : '14px'} 12px 0 0;${lbl}">${esc(c.totalLabel || 'Total')}${c.totalNote ? ` <span style="font-size:9px;opacity:.6">(${esc(c.totalNote)})</span>` : ''}</td><td align="right" style="padding:${c.shippingText ? '10px' : '14px'} 0 0;font-size:${d.textSize + 2}px;font-weight:bold;color:${d.headingColor};white-space:nowrap">${esc(total)}</td></tr>`,
+  ].join('') : '';
+
   const orderList = c.showList && shown.length ? `
     <tr><td style="padding:8px 32px 0">
       <div style="background:#f1f1f1;padding:12px 16px;font-size:12px;font-weight:bold;letter-spacing:.06em;text-transform:uppercase;color:${d.headingColor}">${esc(fill(c.listTitle))}</div>
@@ -211,7 +217,7 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
             <td width="56" valign="middle">${i.image ? `<img src="${esc(i.image)}" alt="" width="44" height="52" style="display:block;width:44px;height:52px;object-fit:cover;border:0">` : `<div style="width:44px;height:52px;background:#ececec"></div>`}</td>
             <td valign="middle" style="font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:${d.headingColor}"><a href="${esc(i.url)}" style="color:${d.headingColor};text-decoration:none;font-weight:bold">${esc(i.title)}</a></td>
           </tr></table></td>${c.showPrice ? `<td align="right" valign="middle" style="padding:12px 0;border-bottom:1px solid #eeeeee;font-size:${d.textSize}px;color:${d.headingColor};font-weight:bold;white-space:nowrap">${esc(i.price || '')}</td>` : ''}</tr>`).join('')}
-        ${total ? `<tr><td align="right" style="padding:14px 12px 0 0;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:${d.headingColor}">Total</td><td align="right" style="padding:14px 0 0;font-size:${d.textSize + 2}px;font-weight:bold;color:${d.headingColor};white-space:nowrap">${esc(total)}</td></tr>` : ''}
+        ${totalRows}
       </table></td></tr>` : '';
 
   const list = c.showList && shown.length ? `
@@ -240,6 +246,39 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
         ${unsub ? `<div style="margin-top:8px;font-size:12px"><a href="${esc(unsub)}" style="color:${ftrText};text-decoration:underline">Unsubscribe</a></div>` : ''}
       </td></tr>`;
 
+  const lines = (t) => paragraphs(t).map((q) => esc(q).replace(/\n/g, '<br>')).join('<br><br>');
+  // text on top of an image: CSS background (Gmail, Apple Mail, Outlook.com); Outlook desktop shows the dark fallback colour
+  const onImage = (u, h, inner, align) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" background="${esc(u)}" style="background:#222222 url('${esc(u)}') center center / cover no-repeat"><tr><td height="${h}" valign="middle" align="${align}" style="height:${h}px;padding:20px 28px">${inner}</td></tr></table>`;
+
+  const promoInner = [
+    c.promoTitle ? `<div style="font-size:22px;font-weight:bold;line-height:1.2;margin-bottom:8px;color:#111111">${esc(fill(c.promoTitle))}</div>` : '',
+    c.promoText ? `<div style="font-size:${d.textSize}px;line-height:1.5;color:#111111;max-width:300px">${lines(fill(c.promoText))}</div>` : '',
+    c.promoButton ? `<div style="margin-top:14px"><a href="${esc(c.promoLink || url)}" style="display:inline-block;background:${d.buttonBg};color:${d.buttonText};text-decoration:none;font-weight:bold;font-size:12px;padding:9px 16px">${esc(fill(c.promoButton))}</a></div>` : '',
+  ].join('');
+  const promo = c.promoImageUrl
+    ? `<tr><td style="padding:0 32px 24px">${promoInner ? onImage(c.promoImageUrl, 200, promoInner, 'left') : linked(c.promoImageUrl, 536, c.promoLink)}</td></tr>` : '';
+
+  const phoneDial = String(c.supportPhone || '').replace(/[^\d+]/g, '');
+  const icon = (u, glyph) => `<a href="${esc(u)}" style="display:inline-block;width:40px;height:40px;line-height:40px;border:2px solid ${d.headingColor};border-radius:50%;text-align:center;text-decoration:none;color:${d.headingColor};font-size:18px;margin:0 6px">${glyph}</a>`;
+  const hasSupport = [c.supportText, c.supportLabel, c.supportEmail, c.supportPhone, c.supportHours, c.whatsappLink].some(Boolean);
+  const support = hasSupport ? `<tr><td align="center" style="padding:8px 32px 20px;font-size:12px;line-height:1.6;color:${d.headingColor}">
+      ${c.supportText ? `<div style="margin-bottom:14px">${lines(fill(c.supportText))}</div>` : ''}
+      ${c.supportLabel ? `<div style="margin-bottom:6px">${esc(fill(c.supportLabel))}</div>` : ''}
+      ${c.supportEmail || c.supportPhone ? `<div style="font-size:14px;padding:6px 0;border-bottom:1px solid #b9c0e8;display:inline-block">${c.supportEmail ? `<a href="mailto:${esc(c.supportEmail)}" style="color:${d.headingColor};text-decoration:none">${esc(c.supportEmail)}</a>` : ''}${c.supportEmail && c.supportPhone ? ' &nbsp;&bull;&nbsp; ' : ''}${c.supportPhone ? `<a href="tel:${esc(phoneDial)}" style="color:${d.headingColor};text-decoration:none">${esc(c.supportPhone)}</a>` : ''}</div>` : ''}
+      ${c.supportHours ? `<div style="margin-top:6px">${esc(c.supportHours)}</div>` : ''}
+      ${c.showSupportIcons !== false && (c.whatsappLink || phoneDial || c.supportEmail) ? `<div style="margin-top:14px">${c.whatsappLink ? icon(c.whatsappLink, '&#128172;') : ''}${phoneDial ? icon('tel:' + phoneDial, '&#128222;') : ''}${c.supportEmail ? icon('mailto:' + c.supportEmail, '&#9993;') : ''}</div>` : ''}
+    </td></tr>` : '';
+
+  const social = (u, t) => (u ? `<a href="${esc(u)}" style="color:#ffffff;text-decoration:none;font-weight:bold;font-size:13px;margin:0 8px">${t}</a>` : '');
+  const bannerInner = [
+    c.bannerTitle ? `<div style="font-size:22px;line-height:1.3;color:#ffffff">${esc(fill(c.bannerTitle))}</div>` : '',
+    c.instagramLink || c.facebookLink || c.xLink ? `<div style="margin-top:12px">${social(c.instagramLink, 'Instagram')}${social(c.facebookLink, 'Facebook')}${social(c.xLink, 'X')}</div>` : '',
+    c.bannerText ? `<div style="margin-top:28px;font-size:11px;font-weight:bold;color:#ffffff">${esc(fill(c.bannerText))}</div>` : '',
+  ].join('');
+  const bottom = c.footerImageUrl
+    ? (bannerInner ? `<tr><td style="padding:0">${onImage(c.footerImageUrl, 240, bannerInner, 'center')}</td></tr>`
+      : `<tr><td style="padding:0;line-height:0;font-size:0">${linked(c.footerImageUrl, 600, c.footerImageLink)}</td></tr>`) : '';
+
   const msgRow = `<tr><td align="${ord ? 'center' : 'left'}" style="padding:${ord ? '12px' : '0'} 32px 20px;font-size:${d.textSize}px;line-height:1.6;color:${d.textColor}">${paragraphs(fill(c.message)).map((p) => `<p style="margin:0 0 14px">${esc(p).replace(/\n/g, '<br>')}</p>`).join('')}</td></tr>`;
 
   const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -255,9 +294,10 @@ ${ord ? msgRow : ''}
 ${ord ? '' : list}
 ${button}
 <tr><td style="height:24px;line-height:24px;font-size:0">&nbsp;</td></tr>
-${ord && c.promoImageUrl ? `<tr><td style="padding:0 32px 24px">${linked(c.promoImageUrl, 536, c.promoLink)}</td></tr>` : ''}
+${ord ? promo : ''}
+${ord ? support : ''}
 ${footer}
-${c.footerImageUrl ? `<tr><td style="padding:0;line-height:0;font-size:0">${linked(c.footerImageUrl, 600, c.footerImageLink)}</td></tr>` : ''}
+${bottom}
 </table></td></tr></table></body></html>`;
 
   const text = [

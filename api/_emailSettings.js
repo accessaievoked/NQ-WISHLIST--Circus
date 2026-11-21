@@ -22,6 +22,10 @@ const DEFAULTS = {
   buttonText: 'View my wishlist',
   fromName: '', replyTo: '', logoUrl: '',
   heroImageUrl: '', tagline: '', promoImageUrl: '', promoLink: '', footerImageUrl: '', footerImageLink: '',
+  showTotal: true, totalLabel: 'Total', totalNote: '', shippingText: '',
+  promoTitle: '', promoText: '', promoButton: '',
+  supportText: '', supportLabel: '', supportEmail: '', supportPhone: '', supportHours: '', whatsappLink: '', showSupportIcons: true,
+  bannerTitle: '', bannerText: '', instagramLink: '', facebookLink: '', xLink: '',
   footerTitle: 'Questions?',
   footerMessage: 'Just reply to this email or reach us at {email}. We are happy to help.',
   footerNote: 'You are getting this because you saved items at {{store_name}}. You can stop these emails at any time with the link below.',
@@ -43,6 +47,8 @@ const text = (v, max, d, { multiline = false, allowEmpty = false } = {}) => {
 };
 
 const https = (v) => (typeof v === 'string' && /^https:\/\/[^\s"'<>]+$/.test(v.trim()) ? v.trim().slice(0, 500) : '');
+
+const reply2 = (v) => (typeof v === 'string' && /^[^s@<>,;]+@[^s@<>,;]+.[^s@<>,;]+$/.test(v.trim()) ? v.trim().slice(0, 200) : '');
 
 function sanitize(raw) {
   const e = raw && typeof raw === 'object' ? raw : {};
@@ -67,6 +73,13 @@ function sanitize(raw) {
     heroImageUrl: https(e.heroImageUrl), tagline: text(e.tagline, 80, '', { allowEmpty: true }),
     promoImageUrl: https(e.promoImageUrl), promoLink: https(e.promoLink),
     footerImageUrl: https(e.footerImageUrl), footerImageLink: https(e.footerImageLink),
+    showTotal: bool(e.showTotal, D.showTotal), totalLabel: text(e.totalLabel, 30, D.totalLabel), totalNote: text(e.totalNote, 60, '', { allowEmpty: true }), shippingText: text(e.shippingText, 30, '', { allowEmpty: true }),
+    promoTitle: text(e.promoTitle, 60, '', { allowEmpty: true }), promoText: text(e.promoText, 200, '', { multiline: true, allowEmpty: true }), promoButton: text(e.promoButton, 30, '', { allowEmpty: true }),
+    supportText: text(e.supportText, 300, '', { multiline: true, allowEmpty: true }), supportLabel: text(e.supportLabel, 80, '', { allowEmpty: true }),
+    supportEmail: reply2(e.supportEmail), supportPhone: text(e.supportPhone, 30, '', { allowEmpty: true }), supportHours: text(e.supportHours, 80, '', { allowEmpty: true }),
+    whatsappLink: https(e.whatsappLink), showSupportIcons: bool(e.showSupportIcons, D.showSupportIcons),
+    bannerTitle: text(e.bannerTitle, 60, '', { allowEmpty: true }), bannerText: text(e.bannerText, 120, '', { allowEmpty: true }),
+    instagramLink: https(e.instagramLink), facebookLink: https(e.facebookLink), xLink: https(e.xLink),
     footerTitle: text(e.footerTitle, 80, D.footerTitle, { allowEmpty: typeof e.footerTitle === 'string' }),
     footerMessage: text(e.footerMessage, 400, D.footerMessage, { multiline: true, allowEmpty: typeof e.footerMessage === 'string' }),
     footerNote: text(e.footerNote, 400, D.footerNote, { multiline: true, allowEmpty: typeof e.footerNote === 'string' }),

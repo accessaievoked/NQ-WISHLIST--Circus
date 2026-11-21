@@ -121,7 +121,25 @@ function client() {
       '<div class="em-row" style="margin-top:12px">' + field('heroImageUrl', 'Hero image link (https)', 'text', { ph: 'https://…/hero.png', hint: 'Big headline image under the header. Empty shows the Heading text instead.' }) + '</div>' +
       '<div class="em-row">' + field('tagline', 'Tagline', 'text', { ph: "We can't wait", hint: 'Small spaced capitals under the hero' }) + '</div>' +
       '<div class="em-row">' + field('promoImageUrl', 'Promo banner image (https)', 'text', { ph: 'https://…/promo.png', hint: 'Shown after the list' }) + field('promoLink', 'Promo banner link', 'text', { ph: 'https://…' }) + '</div>' +
-      '<div class="em-row">' + field('footerImageUrl', 'Bottom banner image (https)', 'text', { ph: 'https://…/footer.png', hint: 'Full-width image at the very bottom (e.g. social icons)' }) + field('footerImageLink', 'Bottom banner link', 'text', { ph: 'https://…' }) + '</div></div>' +
+      '<div class="em-row">' + field('promoTitle', 'Text on promo image: title', 'text', { ph: 'Hey,' }) + field('promoButton', 'Promo button text', 'text', { ph: 'Share softness', hint: 'Empty hides it. Uses the promo banner link' }) + '</div>' +
+      '<div class="em-row">' + field('promoText', 'Text on promo image: message', 'textarea', { rows: 3, ph: 'Now you can send a gift card to everyone in your inner circle.' }) + '</div></div>' +
+
+      '<div class="em-card"><h3>Total</h3>' +
+      check('showTotal', 'Show the total of the saved items') +
+      '<div class="em-row">' + field('totalLabel', 'Total label', 'text') + field('totalNote', 'Small note', 'text', { ph: 'Inclusive of taxes' }) + field('shippingText', 'Shipping fee', 'text', { ph: 'Free', hint: 'Empty hides the shipping and sub-total rows' }) + '</div></div>' +
+
+      '<div class="em-card"><h3>Support block (above the bottom banner)</h3>' +
+      '<div class="em-row">' + field('supportText', 'Help text', 'textarea', { rows: 3, ph: "Need Help? We've got your back! Reach out to us via WhatsApp for instant support." }) + '</div>' +
+      '<div class="em-row">' + field('supportLabel', 'Line above contacts', 'text', { ph: 'For any support reach out to us at :' }) + '</div>' +
+      '<div class="em-row">' + field('supportEmail', 'Support email', 'email', { ph: 'hello@yourstore.com' }) + field('supportPhone', 'Support phone', 'text', { ph: '+91 63825 46490' }) + '</div>' +
+      '<div class="em-row">' + field('supportHours', 'Hours', 'text', { ph: 'Monday - Saturday · 10 AM - 6 PM' }) + field('whatsappLink', 'WhatsApp link (https)', 'text', { ph: 'https://wa.me/91…' }) + '</div>' +
+      check('showSupportIcons', 'Show WhatsApp / call / email icons') + '</div>' +
+
+      '<div class="em-card"><h3>Bottom banner</h3>' +
+      '<div class="em-row">' + field('footerImageUrl', 'Banner image (https)', 'text', { ph: 'https://…/footer.png' }) + field('footerImageLink', 'Banner link (when no text on it)', 'text', { ph: 'https://…' }) + '</div>' +
+      '<div class="em-row">' + field('bannerTitle', 'Text on banner: title', 'text', { ph: 'Love Every Body' }) + field('bannerText', 'Text on banner: small line', 'text', { ph: 'Copyright 2026 &CIRCUS. All rights reserved' }) + '</div>' +
+      '<div class="em-row">' + field('instagramLink', 'Instagram link', 'text', { ph: 'https://instagram.com/…' }) + field('facebookLink', 'Facebook link', 'text', { ph: 'https://facebook.com/…' }) + field('xLink', 'X link', 'text', { ph: 'https://x.com/…' }) + '</div>' +
+      '<div class="em-hint">Add text and the image becomes a background with your text on top. Leave the text empty to show the image alone.</div></div>' +
 
       '<div class="em-card"><h3>Design</h3><div class="em-row">' +
       field('design.headerBg', 'Header', 'color') + field('design.footerBg', 'Footer', 'color') + field('design.buttonBg', 'Button', 'color') + field('design.buttonText', 'Button text', 'color') + '</div>' +
