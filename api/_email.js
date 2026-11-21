@@ -269,10 +269,11 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
       ${c.showSupportIcons !== false && (c.whatsappLink || phoneDial || c.supportEmail) ? `<div style="margin-top:14px">${c.whatsappLink ? icon(c.whatsappLink, '&#128172;') : ''}${phoneDial ? icon('tel:' + phoneDial, '&#128222;') : ''}${c.supportEmail ? icon('mailto:' + c.supportEmail, '&#9993;') : ''}</div>` : ''}
     </td></tr>` : '';
 
-  const social = (u, t) => (u ? `<a href="${esc(u)}" style="color:#ffffff;text-decoration:none;font-weight:bold;font-size:13px;margin:0 8px">${t}</a>` : '');
+  // white PNG icons (email apps do not show SVG); the name is the fallback if images are blocked
+  const social = (u, t, icon) => (u ? `<a href="${esc(u)}" style="display:inline-block;margin:0 9px;text-decoration:none"><img src="https://img.icons8.com/ios-filled/50/ffffff/${icon}.png" alt="${t}" width="26" height="26" style="display:block;width:26px;height:26px;border:0;color:#ffffff;font-size:12px"></a>` : '');
   const bannerInner = [
     c.bannerTitle ? `<div style="font-size:22px;line-height:1.3;color:#ffffff">${esc(fill(c.bannerTitle))}</div>` : '',
-    c.instagramLink || c.facebookLink || c.xLink ? `<div style="margin-top:12px">${social(c.instagramLink, 'Instagram')}${social(c.facebookLink, 'Facebook')}${social(c.xLink, 'X')}</div>` : '',
+    c.instagramLink || c.facebookLink || c.xLink ? `<div style="margin-top:12px">${social(c.instagramLink, 'Instagram', 'instagram-new')}${social(c.facebookLink, 'Facebook', 'facebook-f')}${social(c.xLink, 'X', 'twitterx')}</div>` : '',
     c.bannerText ? `<div style="margin-top:28px;font-size:11px;font-weight:bold;color:#ffffff">${esc(fill(c.bannerText))}</div>` : '',
   ].join('');
   const bottom = c.footerImageUrl
