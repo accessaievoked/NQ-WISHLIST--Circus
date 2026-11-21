@@ -120,6 +120,8 @@ function client() {
       '<button class="em-btn ghost" id="em-preset" type="button">Apply the &amp;Circus look</button> <span class="em-hint">Fills in the same images, text, contacts and social links as the order-confirmation email. Then click Save changes.</span>' +
       '<div class="em-row" style="margin-top:12px">' + field('heroImageUrl', 'Hero image link (https)', 'text', { ph: 'https://…/hero.png', hint: 'Big headline image under the header. Empty shows the Heading text instead.' }) + '</div>' +
       '<div class="em-row">' + field('tagline', 'Tagline', 'text', { ph: "We can't wait", hint: 'Small spaced capitals under the hero' }) + '</div>' +
+      '<div class="em-row">' + field('midTitle', 'Text above the promo banner: title', 'text', { ph: 'Want to add or change something?' }) + '</div>' +
+      '<div class="em-row">' + field('midText', 'Text above the promo banner: line', 'text', { ph: 'Let us know ASAP! We can [help]', hint: 'Put a word in [square brackets] to make it a pink email link' }) + '</div>' +
       '<div class="em-row">' + field('promoImageUrl', 'Promo banner image (https)', 'text', { ph: 'https://…/promo.png', hint: 'Shown after the list' }) + field('promoLink', 'Promo banner link', 'text', { ph: 'https://…' }) + '</div>' +
       '<div class="em-row">' + field('promoTitle', 'Text on promo image: title', 'text', { ph: 'Hey,' }) + field('promoButton', 'Promo button text', 'text', { ph: 'Share softness', hint: 'Empty hides it. Uses the promo banner link' }) + '</div>' +
       '<div class="em-row">' + field('promoText', 'Text on promo image: message', 'textarea', { rows: 3, ph: 'Now you can send a gift card to everyone in your inner circle.' }) + '</div></div>' +
@@ -180,7 +182,7 @@ function client() {
       cfg.footerImageUrl = F + 'Rectangle_673.png?v=1738247383'; cfg.footerImageLink = '';
       cfg.bannerTitle = 'Love Every Body'; cfg.bannerText = 'Copyright 2024 &CIRCUS™, All rights reserved';
       cfg.instagramLink = 'https://www.instagram.com/_andcircus/'; cfg.facebookLink = 'https://www.facebook.com/tailorandcircus/'; cfg.xLink = 'https://twitter.com/tailorandcircus/';
-      cfg.footerTitle = 'Want to add or change something?'; cfg.footerMessage = 'Let us know ASAP! We can help at {email}.';
+      cfg.midTitle = 'Want to add or change something?'; cfg.midText = 'Let us know ASAP! We can [help]'; cfg.footerTitle = ''; cfg.footerMessage = '';
       dirty = true; $('em-saved').textContent = 'Unsaved changes';
       build(info);
     };

@@ -293,6 +293,10 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
     ? (bannerInner ? `<tr><td style="padding:0">${onImage(c.footerImageUrl, 205, bannerInner, 'center')}</td></tr>`
       : `<tr><td style="padding:0;line-height:0;font-size:0">${linked(c.footerImageUrl, 600, c.footerImageLink)}</td></tr>`) : '';
 
+  // text between the total and the promo banner; [help] becomes a pink mailto link
+  const helpMail = c.supportEmail || contact;
+  const midRow = ord && (c.midTitle || c.midText) ? `<tr><td align="center" style="padding:24px 32px 4px;color:${d.headingColor}">${c.midTitle ? `<div style="font-size:16px;line-height:28px">${esc(fill(c.midTitle))}</div>` : ''}${c.midText ? `<div style="font-size:14px;line-height:22px">${esc(fill(c.midText)).replace(/\[(.+?)\]/g, (m, w) => `<a href="mailto:${esc(helpMail)}" style="color:#d31e4e;text-decoration:underline">${w}</a>`)}</div>` : ''}</td></tr>` : '';
+
   const msgRow = !paragraphs(fill(c.message)).length || (ord && c.showMessage !== true) ? '' : `<tr><td align="${ord ? 'center' : 'left'}" style="padding:${ord ? '12px' : '0'} 32px 20px;font-size:${d.textSize}px;line-height:1.6;color:${d.textColor}">${paragraphs(fill(c.message)).map((p) => `<p style="margin:0 0 14px">${esc(p).replace(/\n/g, '<br>')}</p>`).join('')}</td></tr>`;
 
   const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;700&display=swap" rel="stylesheet"></head>
@@ -307,6 +311,7 @@ ${ord ? '' : msgRow}
 ${ord ? msgRow : ''}
 ${ord ? '' : list}
 ${button}
+${midRow}
 <tr><td style="height:24px;line-height:24px;font-size:0">&nbsp;</td></tr>
 ${ord ? promo : ''}
 ${ord ? support : ''}
