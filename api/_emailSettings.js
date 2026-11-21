@@ -7,6 +7,7 @@ const HANDLE = 'default';
 
 const FONTS = {
   arial: 'Arial, Helvetica, sans-serif',
+  raleway: "'Raleway', Arial, Helvetica, sans-serif",
   verdana: 'Verdana, Geneva, sans-serif',
   trebuchet: "'Trebuchet MS', Helvetica, sans-serif",
   georgia: "Georgia, 'Times New Roman', serif",
@@ -61,8 +62,8 @@ function sanitize(raw) {
     minGapDays: int(e.minGapDays, 0, 90, D.minGapDays),
     maxItems: int(e.maxItems, 1, 10, D.maxItems),
     subject: text(e.subject, 150, D.subject),
-    heading: text(e.heading, 150, D.heading),
-    message: text(e.message, 1500, D.message, { multiline: true }),
+    heading: text(e.heading, 150, D.heading, { allowEmpty: typeof e.heading === 'string' }),
+    message: text(e.message, 1500, D.message, { multiline: true, allowEmpty: typeof e.message === 'string' }),
     showList: bool(e.showList, D.showList),
     listTitle: text(e.listTitle, 80, D.listTitle),
     showPrice: bool(e.showPrice, D.showPrice),

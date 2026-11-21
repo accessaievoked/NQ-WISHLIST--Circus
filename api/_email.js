@@ -209,7 +209,7 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
 
   const orderList = c.showList && shown.length ? `
     <tr><td style="padding:8px 32px 0">
-      <div style="background:#f1f1f1;padding:12px 16px;font-size:12px;font-weight:bold;letter-spacing:.06em;text-transform:uppercase;color:${d.headingColor}">${esc(fill(c.listTitle))}</div>
+      <div style="background:#f6f6f6;padding:10px 30px;font-size:15px;font-weight:600;text-transform:uppercase;color:#5f5f5f">${esc(fill(c.listTitle))}</div>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:14px">
         <tr><td style="padding:0 0 10px;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:${d.headingColor};border-bottom:1px solid #e5e7eb">Item</td>${c.showPrice ? `<td align="right" style="padding:0 0 10px;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:${d.headingColor};border-bottom:1px solid #e5e7eb">Price</td>` : ''}</tr>
         ${shown.map((i) => `<tr><td style="padding:12px 0;border-bottom:1px solid #eeeeee">
@@ -235,7 +235,7 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
       </table></td></tr>` : '';
 
   const button = c.buttonText
-    ? `<tr><td align="${ord ? 'center' : 'left'}" style="padding:24px 32px 8px"><a href="${esc(url)}" style="display:inline-block;background:${d.buttonBg};color:${d.buttonText};text-decoration:none;font-weight:bold;font-size:${d.textSize}px;padding:13px 28px;border-radius:${d.corner}px">${esc(fill(c.buttonText))}</a></td></tr>`
+    ? `<tr><td align="${ord ? 'center' : 'left'}" style="padding:24px 32px 8px"><a href="${esc(url)}" style="display:inline-block;background:${d.buttonBg};color:${d.buttonText};text-decoration:none;font-weight:bold;font-size:${ord ? 16 : d.textSize}px;${ord ? 'text-transform:uppercase;' : ''}padding:${ord ? '17px 36px' : '13px 28px'};border-radius:${d.corner}px">${esc(fill(c.buttonText))}</a></td></tr>`
     : '';
 
   // the unsubscribe link is always there when we have one: people must be able to stop these emails
@@ -259,35 +259,41 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
     ? `<tr><td style="padding:0 32px 24px">${promoInner ? onImage(c.promoImageUrl, 200, promoInner, 'left') : linked(c.promoImageUrl, 536, c.promoLink)}</td></tr>` : '';
 
   const phoneDial = String(c.supportPhone || '').replace(/[^\d+]/g, '');
-  const icon = (u, glyph) => `<a href="${esc(u)}" style="display:inline-block;width:40px;height:40px;line-height:40px;border:2px solid ${d.headingColor};border-radius:50%;text-align:center;text-decoration:none;color:${d.headingColor};font-size:18px;margin:0 6px">${glyph}</a>`;
+  // &Circus icon images (the same files the order-confirmation email uses)
+  const CDN = 'https://cdn.shopify.com/s/files/1/0750/2191/0293/files/';
+  const ICONS = { whatsapp: [CDN + 'em-whatsapp.png?v=1706831088', 32], phone: [CDN + 'em-phone.png?v=1706831088', 30], email: [CDN + 'em-email.png?v=1706831088', 36] };
+  const icon = (u, key, alt) => `<a href="${esc(u)}" target="_blank" style="display:inline-block;margin:0 8px;text-decoration:none"><img src="${ICONS[key][0]}" alt="${alt}" width="${ICONS[key][1]}" style="display:block;width:${ICONS[key][1]}px;height:auto;border:0"></a>`;
+  // **bold** in the help text, and the word WhatsApp becomes a link when a WhatsApp link is set
+  const richSupport = (t) => lines(fill(t)).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+    .replace(/WhatsApp/, c.whatsappLink ? `<a href="${esc(c.whatsappLink)}" target="_blank" style="color:${d.headingColor};text-decoration:underline">WhatsApp</a>` : 'WhatsApp');
   const hasSupport = [c.supportText, c.supportLabel, c.supportEmail, c.supportPhone, c.supportHours, c.whatsappLink].some(Boolean);
   const support = hasSupport ? `<tr><td align="center" style="padding:8px 32px 20px;font-size:12px;line-height:1.6;color:${d.headingColor}">
-      ${c.supportText ? `<div style="margin-bottom:14px">${lines(fill(c.supportText))}</div>` : ''}
+      ${c.supportText ? `<div style="margin-bottom:14px">${richSupport(c.supportText)}</div>` : ''}
       ${c.supportLabel ? `<div style="margin-bottom:6px">${esc(fill(c.supportLabel))}</div>` : ''}
       ${c.supportEmail || c.supportPhone ? `<div style="font-size:14px;padding:6px 0;border-bottom:1px solid #b9c0e8;display:inline-block">${c.supportEmail ? `<a href="mailto:${esc(c.supportEmail)}" style="color:${d.headingColor};text-decoration:none">${esc(c.supportEmail)}</a>` : ''}${c.supportEmail && c.supportPhone ? ' &nbsp;&bull;&nbsp; ' : ''}${c.supportPhone ? `<a href="tel:${esc(phoneDial)}" style="color:${d.headingColor};text-decoration:none">${esc(c.supportPhone)}</a>` : ''}</div>` : ''}
       ${c.supportHours ? `<div style="margin-top:6px">${esc(c.supportHours)}</div>` : ''}
-      ${c.showSupportIcons !== false && (c.whatsappLink || phoneDial || c.supportEmail) ? `<div style="margin-top:14px">${c.whatsappLink ? icon(c.whatsappLink, '&#128172;') : ''}${phoneDial ? icon('tel:' + phoneDial, '&#128222;') : ''}${c.supportEmail ? icon('mailto:' + c.supportEmail, '&#9993;') : ''}</div>` : ''}
+      ${c.showSupportIcons !== false && (c.whatsappLink || phoneDial || c.supportEmail) ? `<div style="margin-top:14px">${c.whatsappLink ? icon(c.whatsappLink, 'whatsapp', 'WhatsApp') : ''}${phoneDial ? icon('tel:' + phoneDial, 'phone', 'Call') : ''}${c.supportEmail ? icon('mailto:' + c.supportEmail, 'email', 'Email') : ''}</div>` : ''}
     </td></tr>` : '';
 
   // white PNG icons (email apps do not show SVG); the name is the fallback if images are blocked
-  const social = (u, t, icon) => (u ? `<a href="${esc(u)}" style="display:inline-block;margin:0 9px;text-decoration:none"><img src="https://img.icons8.com/ios-filled/50/ffffff/${icon}.png" alt="${t}" width="26" height="26" style="display:block;width:26px;height:26px;border:0;color:#ffffff;font-size:12px"></a>` : '');
+  const social = (u, t, file) => (u ? `<a href="${esc(u)}" style="display:inline-block;margin:0 8px;text-decoration:none"><img src="${CDN}${file}" alt="${t}" width="24" height="24" style="display:block;width:24px;height:24px;object-fit:contain;border:0;color:#ffffff;font-size:12px"></a>` : '');
   const bannerInner = [
     c.bannerTitle ? `<div style="font-size:22px;line-height:1.3;color:#ffffff">${esc(fill(c.bannerTitle))}</div>` : '',
-    c.instagramLink || c.facebookLink || c.xLink ? `<div style="margin-top:12px">${social(c.instagramLink, 'Instagram', 'instagram-new')}${social(c.facebookLink, 'Facebook', 'facebook-f')}${social(c.xLink, 'X', 'twitterx')}</div>` : '',
+    c.instagramLink || c.facebookLink || c.xLink ? `<div style="margin-top:12px">${social(c.instagramLink, 'Instagram', 'instagram-white.png?v=1706832607')}${social(c.facebookLink, 'Facebook', 'facebook-white.png?v=1706832606')}${social(c.xLink, 'X', 'x-twitter.png?v=1706832606')}</div>` : '',
     c.bannerText ? `<div style="margin-top:28px;font-size:11px;font-weight:bold;color:#ffffff">${esc(fill(c.bannerText))}</div>` : '',
   ].join('');
   const bottom = c.footerImageUrl
-    ? (bannerInner ? `<tr><td style="padding:0">${onImage(c.footerImageUrl, 240, bannerInner, 'center')}</td></tr>`
+    ? (bannerInner ? `<tr><td style="padding:0">${onImage(c.footerImageUrl, 205, bannerInner, 'center')}</td></tr>`
       : `<tr><td style="padding:0;line-height:0;font-size:0">${linked(c.footerImageUrl, 600, c.footerImageLink)}</td></tr>`) : '';
 
-  const msgRow = `<tr><td align="${ord ? 'center' : 'left'}" style="padding:${ord ? '12px' : '0'} 32px 20px;font-size:${d.textSize}px;line-height:1.6;color:${d.textColor}">${paragraphs(fill(c.message)).map((p) => `<p style="margin:0 0 14px">${esc(p).replace(/\n/g, '<br>')}</p>`).join('')}</td></tr>`;
+  const msgRow = !paragraphs(fill(c.message)).length ? '' : `<tr><td align="${ord ? 'center' : 'left'}" style="padding:${ord ? '12px' : '0'} 32px 20px;font-size:${d.textSize}px;line-height:1.6;color:${d.textColor}">${paragraphs(fill(c.message)).map((p) => `<p style="margin:0 0 14px">${esc(p).replace(/\n/g, '<br>')}</p>`).join('')}</td></tr>`;
 
-  const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+  const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;700&display=swap" rel="stylesheet"></head>
 <body style="margin:0;padding:0;background:#f3f4f6;font-family:${d.font}">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6"><tr><td align="center" style="padding:24px 12px">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:${d.corner}px;overflow:hidden;border-collapse:separate">
 ${header}
-${ord && c.heroImageUrl ? `<tr><td style="padding:0;line-height:0;font-size:0">${imgTag(c.heroImageUrl, 600)}</td></tr>` : `<tr><td align="${ord ? 'center' : 'left'}" style="padding:32px 32px 8px;font-size:${d.headingSize}px;line-height:1.25;font-weight:bold;color:${d.headingColor}">${esc(fill(c.heading))}</td></tr>`}
+${ord && c.heroImageUrl ? `<tr><td style="padding:0;line-height:0;font-size:0">${imgTag(c.heroImageUrl, 600)}</td></tr>` : fill(c.heading).trim() ? `<tr><td align="${ord ? 'center' : 'left'}" style="padding:32px 32px 8px;font-size:${d.headingSize}px;line-height:1.25;font-weight:bold;color:${d.headingColor}">${esc(fill(c.heading))}</td></tr>` : ''}
 ${ord && c.tagline ? `<tr><td align="center" style="padding:8px 32px 8px;font-size:${d.textSize}px;letter-spacing:.2em;text-transform:uppercase;color:${d.headingColor}">${esc(fill(c.tagline))}</td></tr>` : ''}
 ${ord ? orderList : ''}
 ${ord ? '' : msgRow}

@@ -56,7 +56,7 @@ function client() {
       .then(function (r) { return r.json(); });
   };
 
-  var FONTS = [['arial', 'Arial'], ['verdana', 'Verdana'], ['trebuchet', 'Trebuchet'], ['georgia', 'Georgia'], ['times', 'Times']];
+  var FONTS = [['arial', 'Arial'], ['raleway', 'Raleway'], ['verdana', 'Verdana'], ['trebuchet', 'Trebuchet'], ['georgia', 'Georgia'], ['times', 'Times']];
   var get = function (k) { return k.indexOf('design.') === 0 ? cfg.design[k.slice(7)] : cfg[k]; };
   var set = function (k, v) { if (k.indexOf('design.') === 0) cfg.design[k.slice(7)] = v; else cfg[k] = v; };
 
@@ -117,7 +117,7 @@ function client() {
 
       '<div class="em-card"><h3>Order-email style images</h3>' +
       check('design.orderStyle', 'Use the order-confirmation layout (centred text, grey section bar, item/price table)') +
-      '<button class="em-btn ghost" id="em-preset" type="button">Apply the &amp;Circus look</button> <span class="em-hint">Sets lime header, white footer, square corners and the layout above.</span>' +
+      '<button class="em-btn ghost" id="em-preset" type="button">Apply the &amp;Circus look</button> <span class="em-hint">Fills in the same images, text, contacts and social links as the order-confirmation email. Then click Save changes.</span>' +
       '<div class="em-row" style="margin-top:12px">' + field('heroImageUrl', 'Hero image link (https)', 'text', { ph: 'https://…/hero.png', hint: 'Big headline image under the header. Empty shows the Heading text instead.' }) + '</div>' +
       '<div class="em-row">' + field('tagline', 'Tagline', 'text', { ph: "We can't wait", hint: 'Small spaced capitals under the hero' }) + '</div>' +
       '<div class="em-row">' + field('promoImageUrl', 'Promo banner image (https)', 'text', { ph: 'https://…/promo.png', hint: 'Shown after the list' }) + field('promoLink', 'Promo banner link', 'text', { ph: 'https://…' }) + '</div>' +
@@ -162,9 +162,25 @@ function client() {
     $('em-test').onclick = test;
     $('em-preset').onclick = function () {
       var d = cfg.design;
-      d.orderStyle = true; d.headerBg = '#ccf381'; d.footerBg = '#ffffff'; d.corner = 0;
-      d.headingColor = '#111111'; d.textColor = '#111111'; d.buttonBg = '#111111'; d.buttonText = '#ffffff';
-      if (!cfg.tagline) cfg.tagline = "We can't wait";
+      var F = 'https://cdn.shopify.com/s/files/1/0750/2191/0293/files/';
+      d.orderStyle = true; d.logoFull = true; d.footerBg = '#ffffff'; d.corner = 0; d.font = 'raleway';
+      d.headingColor = '#000000'; d.textColor = '#000000'; d.buttonBg = '#dcff9c'; d.buttonText = '#000000';
+      // same images, text and contacts as the order-confirmation email
+      cfg.logoUrl = F + 'unnamed_95d28346-c5e1-4ce7-a9b9-2de68cb43651.jpg?v=1741341880';
+      cfg.heroImageUrl = ''; cfg.tagline = ''; cfg.heading = '';
+      cfg.listTitle = 'Wishlist details'; cfg.showTotal = true; cfg.totalLabel = 'Total'; cfg.totalNote = 'Inclusive of taxes';
+      cfg.promoImageUrl = F + 'Order_Confirmation.png?v=1741610710';
+      cfg.promoLink = 'https://www.andcircus.com/products/gift-card';
+      cfg.promoTitle = ''; cfg.promoText = ''; cfg.promoButton = '';
+      cfg.supportText = "**Need Help?** We've got your back! Reach out to us via WhatsApp for instant support.";
+      cfg.supportLabel = 'For any support reach out to us at :';
+      cfg.supportEmail = 'hello@andcircus.com'; cfg.supportPhone = '6382546490';
+      cfg.supportHours = 'Monday - Saturday - 10 AM - 6 PM';
+      cfg.whatsappLink = 'https://wa.me/9843137146?text=I%20want%20help%20%26circus'; cfg.showSupportIcons = true;
+      cfg.footerImageUrl = F + 'Rectangle_673.png?v=1738247383'; cfg.footerImageLink = '';
+      cfg.bannerTitle = 'Love Every Body'; cfg.bannerText = 'Copyright 2024 &CIRCUS™, All rights reserved';
+      cfg.instagramLink = 'https://www.instagram.com/_andcircus/'; cfg.facebookLink = 'https://www.facebook.com/tailorandcircus/'; cfg.xLink = 'https://twitter.com/tailorandcircus/';
+      cfg.footerTitle = 'Want to add or change something?'; cfg.footerMessage = 'Let us know ASAP! We can help at {email}.';
       dirty = true; $('em-saved').textContent = 'Unsaved changes';
       build(info);
     };
