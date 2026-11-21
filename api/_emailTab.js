@@ -167,7 +167,7 @@ function client() {
       d.headingColor = '#000000'; d.textColor = '#000000'; d.buttonBg = '#dcff9c'; d.buttonText = '#000000';
       // same images, text and contacts as the order-confirmation email
       cfg.logoUrl = F + 'unnamed_95d28346-c5e1-4ce7-a9b9-2de68cb43651.jpg?v=1741341880';
-      cfg.heroImageUrl = ''; cfg.tagline = ''; cfg.heading = '';
+      cfg.heroImageUrl = ''; cfg.tagline = ''; cfg.heading = ''; cfg.message = ''; cfg.buttonText = '';
       cfg.listTitle = 'Wishlist details'; cfg.showTotal = true; cfg.totalLabel = 'Total'; cfg.totalNote = 'Inclusive of taxes';
       cfg.promoImageUrl = F + 'Order_Confirmation.png?v=1741610710';
       cfg.promoLink = 'https://www.andcircus.com/products/gift-card';

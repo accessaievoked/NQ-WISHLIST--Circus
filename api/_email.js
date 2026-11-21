@@ -196,15 +196,20 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
   const linked = (u, w, link) => (link ? `<a href="${esc(link)}" style="text-decoration:none">${imgTag(u, w)}</a>` : imgTag(u, w));
 
   // total of the shown items, only when every price can be read (prices are plain text like "₹1,499")
-  const amounts = shown.map((i) => parseFloat(String(i.price || '').replace(/[^0-9.]/g, '')));
-  const prefix = ((shown[0] && String(shown[0].price || '').match(/^[^d]*/)) || [''])[0].trim();
+  const amounts = shown.map((i) => { const m = String(i.price || '').match(/\d[\d,]*(?:\.\d+)?/); return m ? parseFloat(m[0].replace(/,/g, '')) : NaN; });
+  const prefix = ((shown[0] && String(shown[0].price || '').match(/^\D*/)) || [''])[0].trim();
   const total = c.showPrice && shown.length && amounts.every((n) => Number.isFinite(n))
-    ? `${prefix}${amounts.reduce((a, b) => a + b, 0).toLocaleString(/₹|rs/i.test(prefix) ? 'en-IN' : 'en-US', { maximumFractionDigits: 2 })}` : '';
+    ? `${prefix}${amounts.reduce((a, b) => a + b, 0).toLocaleString(/₹|rs/i.test(prefix) ? 'en-IN' : 'en-US', { minimumFractionDigits: amounts.some((n) => n % 1) ? 2 : 0, maximumFractionDigits: 2 })}` : '';
 
   const lbl = `font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:${d.headingColor}`;
+  const row = (label, value, top, big) => `<tr><td align="right" style="padding:${top}px 14px 0 0;${lbl}">${label}</td><td align="right" style="padding:${top}px 0 0;font-size:${big ? d.textSize + 1 : d.textSize}px;color:${d.headingColor};white-space:nowrap">${value}</td></tr>`;
+  const rule = '<tr><td colspan="2" style="padding-top:14px;border-bottom:1px solid #e5e7eb;font-size:0;line-height:0">&nbsp;</td></tr>';
   const totalRows = total && c.showTotal !== false ? [
-    c.shippingText ? `<tr><td align="right" style="padding:14px 12px 0 0;${lbl}">Sub-total</td><td align="right" style="padding:14px 0 0;font-size:${d.textSize}px;color:${d.headingColor};white-space:nowrap">${esc(total)}</td></tr><tr><td align="right" style="padding:6px 12px 0 0;${lbl}">Shipping fee</td><td align="right" style="padding:6px 0 0;font-size:${d.textSize}px;color:${d.headingColor};white-space:nowrap">${esc(c.shippingText)}</td></tr>` : '',
-    `<tr><td align="right" style="padding:${c.shippingText ? '10px' : '14px'} 12px 0 0;${lbl}">${esc(c.totalLabel || 'Total')}${c.totalNote ? ` <span style="font-size:9px;opacity:.6">(${esc(c.totalNote)})</span>` : ''}</td><td align="right" style="padding:${c.shippingText ? '10px' : '14px'} 0 0;font-size:${d.textSize + 2}px;font-weight:bold;color:${d.headingColor};white-space:nowrap">${esc(total)}</td></tr>`,
+    rule,
+    row('Sub-total', esc(total), 14),
+    c.shippingText ? row('Shipping fee', esc(c.shippingText), 8) : '',
+    rule,
+    row(`${esc(c.totalLabel || 'Total')}${c.totalNote ? ` <span style="font-size:9px;opacity:.6">(${esc(c.totalNote)})</span>` : ''}`, esc(total), 14, true),
   ].join('') : '';
 
   const orderList = c.showList && shown.length ? `
