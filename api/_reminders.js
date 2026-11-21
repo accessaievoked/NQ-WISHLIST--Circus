@@ -1,7 +1,7 @@
 // Reminder logic shared by the daily cron and the "send straight away" path (delay = 0 hours).
 const email = require('./_email');
 const settingsStore = require('./_emailSettings');
-const { fetchAllEntries, updateEntry, money } = require('./_shopify');
+const { gql, fetchAllEntries, updateEntry, money } = require('./_shopify');
 
 const HOUR = 3600000, DAY = 86400000;
 
@@ -67,4 +67,43 @@ async function sendNowIfInstant(addr) {
   }
 }
 
-module.exports = { due, send, sendNowIfInstant };
+// Real products from this store for the preview and test email (so it looks like a real reminder):
+// the latest products shoppers saved, else the store's own products. Cached for a few minutes because
+// the live preview re-renders as you type. Returns [] when nothing can be read (caller falls back to samples).
+let previewCache = { at: 0, items: [] };
+async function previewItems(count = 3) {
+  if (Date.now() - previewCache.at < 5 * 60000 && previewCache.items.length) return previewCache.items;
+  const base = email.storeUrl();
+  let items = [];
+  try {
+    const seen = new Set();
+    const rows = (await fetchAllEntries()).sort((a, b) => (Date.parse(b.added_at) || 0) - (Date.parse(a.added_at) || 0));
+    for (const r of rows) {
+      const key = r.product_handle || r.product_title;
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      items.push({
+        title: r.product_title || 'Saved item',
+        url: r.product_handle ? `${base}/products/${r.product_handle}` : email.wishlistUrl(),
+        image: httpsUrl(r.product_image),
+        price: money(r.product_price),
+      });
+      if (items.length >= count) break;
+    }
+  } catch (e) { console.error('[Preview items: wishlist]', e.message); }
+  if (!items.length) {
+    try {
+      const data = await gql(`query { products(first: ${count}, sortKey: UPDATED_AT, reverse: true) { nodes { title handle featuredImage { url } priceRangeV2 { minVariantPrice { amount } } } } }`);
+      items = data.products.nodes.map((p) => ({
+        title: p.title,
+        url: `${base}/products/${p.handle}`,
+        image: httpsUrl(p.featuredImage && p.featuredImage.url),
+        price: money(p.priceRangeV2.minVariantPrice.amount),
+      }));
+    } catch (e) { console.error('[Preview items: catalog]', e.message); }
+  }
+  if (items.length) previewCache = { at: Date.now(), items };
+  return items;
+}
+
+module.exports = { due, send, sendNowIfInstant, previewItems };

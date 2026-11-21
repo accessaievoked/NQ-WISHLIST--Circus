@@ -72,8 +72,10 @@ async function handleEmail(req, res) {
   const settings = settingsStore.sanitize(kind === 'email-test' ? body && body.settings : body);
   email.use(settings);
   const base = email.publicApiUrl();
+  // real products from the store when we can read them, made-up ones otherwise
+  const real = await require('./_reminders').previewItems().catch(() => []);
   const mail = email.renderEmail({
-    customerName: 'Asha', items: email.SAMPLE_ITEMS,
+    customerName: 'Asha', items: real.length ? real : email.SAMPLE_ITEMS,
     unsubscribeUrl: base ? base + '/api/unsubscribe?t=preview' : '',
   });
 
