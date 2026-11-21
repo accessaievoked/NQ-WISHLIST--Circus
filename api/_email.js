@@ -205,13 +205,14 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
   const lbl = `font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:${d.headingColor}`;
   const row = (label, value, top, big) => `<tr><td width="46%"></td><td align="center" style="padding:${top}px 8px 0;${lbl}">${label}</td><td align="right" style="padding:${top}px 0 0;font-size:${big ? d.textSize + 1 : d.textSize}px;color:${d.headingColor};white-space:nowrap">${value}</td></tr>`;
   const rule = '<tr><td colspan="3" style="padding-top:14px;border-bottom:1px solid #e5e7eb;font-size:0;line-height:0">&nbsp;</td></tr>';
+  const zero = `${prefix}0`; // rows with nothing typed show 0
   const totalsTable = total && c.showTotal !== false ? `
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
         ${rule}
         ${row('Sub-total', esc(total), 14)}
-        ${c.discountText ? row('Order discount', esc(c.discountText), 8) : ''}
-        ${c.shippingText ? row('Shipping fee', esc(c.shippingText), 8) : ''}
-        ${c.dutiesText ? row('Duties', esc(c.dutiesText), 8) : ''}
+        ${row('Order discount', esc(c.discountText || zero), 8)}
+        ${row('Shipping fee', esc(c.shippingText || zero), 8)}
+        ${row('Duties', esc(c.dutiesText || zero), 8)}
         ${rule}
         ${row(`${esc(c.totalLabel || 'Total')}${c.totalNote ? ` <span style="font-size:9px;opacity:.6">(${esc(c.totalNote)})</span>` : ''}`, esc(total), 14, true)}
         ${c.savedText ? `<tr><td colspan="3" align="right" style="padding:8px 0 0;font-size:14px;color:#8a8a8a">${esc(c.savedText)}</td></tr>` : ''}
