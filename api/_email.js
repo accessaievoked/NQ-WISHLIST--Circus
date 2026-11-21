@@ -129,7 +129,7 @@ const DEFAULTS = {
   footerNote: 'You are getting this because you saved items at {{store_name}}. You can stop these emails at any time with the link below.',
   maxItems: 5, showList: true, showPrice: true,
   design: {
-    corner: 8, headerBg: '#1f2937', logoFull: false, footerBg: '#f3f4f6', buttonBg: '#1f2937', buttonText: '#ffffff',
+    corner: 8, headerBg: '#1f2937', logoFull: false, orderStyle: false, footerBg: '#f3f4f6', buttonBg: '#1f2937', buttonText: '#ffffff',
     headingColor: '#111111', textColor: '#444444', headingSize: 24, textSize: 15,
     font: "Arial, Helvetica, sans-serif",
   },
@@ -191,6 +191,22 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
     : `<tr><td align="center" style="background:${d.headerBg};padding:28px 24px;color:${hdrText};font-size:22px;font-weight:bold">${
     logo ? `<img src="${esc(logo)}" alt="${esc(name)}" height="44" style="display:inline-block;height:44px;width:auto;border:0">` : esc(name)}</td></tr>`;
 
+  const ord = !!d.orderStyle;
+  const imgTag = (u, w) => `<img src="${esc(u)}" alt="" width="${w}" style="display:block;width:100%;max-width:${w}px;height:auto;border:0">`;
+  const linked = (u, w, link) => (link ? `<a href="${esc(link)}" style="text-decoration:none">${imgTag(u, w)}</a>` : imgTag(u, w));
+
+  const orderList = c.showList && shown.length ? `
+    <tr><td style="padding:8px 32px 0">
+      <div style="background:#f1f1f1;padding:12px 16px;font-size:12px;font-weight:bold;letter-spacing:.06em;text-transform:uppercase;color:${d.headingColor}">${esc(fill(c.listTitle))}</div>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:14px">
+        <tr><td style="padding:0 0 10px;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:${d.headingColor};border-bottom:1px solid #e5e7eb">Item</td>${c.showPrice ? `<td align="right" style="padding:0 0 10px;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:${d.headingColor};border-bottom:1px solid #e5e7eb">Price</td>` : ''}</tr>
+        ${shown.map((i) => `<tr><td style="padding:12px 0;border-bottom:1px solid #eeeeee">
+          <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+            <td width="56" valign="middle">${i.image ? `<img src="${esc(i.image)}" alt="" width="44" height="52" style="display:block;width:44px;height:52px;object-fit:cover;border:0">` : `<div style="width:44px;height:52px;background:#ececec"></div>`}</td>
+            <td valign="middle" style="font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:${d.headingColor}"><a href="${esc(i.url)}" style="color:${d.headingColor};text-decoration:none;font-weight:bold">${esc(i.title)}</a></td>
+          </tr></table></td>${c.showPrice ? `<td align="right" valign="middle" style="padding:12px 0;border-bottom:1px solid #eeeeee;font-size:${d.textSize}px;color:${d.headingColor};font-weight:bold;white-space:nowrap">${esc(i.price || '')}</td>` : ''}</tr>`).join('')}
+      </table></td></tr>` : '';
+
   const list = c.showList && shown.length ? `
     <tr><td style="padding:8px 32px 0">
       <div style="font-size:12px;font-weight:bold;letter-spacing:.06em;text-transform:uppercase;color:${d.buttonBg};padding-bottom:8px">${esc(fill(c.listTitle))}</div>
@@ -206,11 +222,11 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
       </table></td></tr>` : '';
 
   const button = c.buttonText
-    ? `<tr><td style="padding:24px 32px 8px"><a href="${esc(url)}" style="display:inline-block;background:${d.buttonBg};color:${d.buttonText};text-decoration:none;font-weight:bold;font-size:${d.textSize}px;padding:13px 28px;border-radius:${d.corner}px">${esc(fill(c.buttonText))}</a></td></tr>`
+    ? `<tr><td align="${ord ? 'center' : 'left'}" style="padding:24px 32px 8px"><a href="${esc(url)}" style="display:inline-block;background:${d.buttonBg};color:${d.buttonText};text-decoration:none;font-weight:bold;font-size:${d.textSize}px;padding:13px 28px;border-radius:${d.corner}px">${esc(fill(c.buttonText))}</a></td></tr>`
     : '';
 
   // the unsubscribe link is always there when we have one: people must be able to stop these emails
-  const footer = `<tr><td style="background:${d.footerBg};padding:24px 32px;color:${ftrText};font-size:13px;line-height:1.55">
+  const footer = `<tr><td style="background:${d.footerBg};padding:24px 32px;${ord ? 'text-align:center;' : ''}color:${ftrText};font-size:13px;line-height:1.55">
         ${c.footerTitle ? `<div style="font-weight:bold;font-size:14px;margin-bottom:4px">${esc(fill(c.footerTitle))}</div>` : ''}
         ${c.footerMessage ? `<div>${inEmail(c.footerMessage)}</div>` : ''}
         ${c.footerNote ? `<div style="margin-top:12px;font-size:12px;opacity:.75">${inEmail(c.footerNote)}</div>` : ''}
@@ -222,12 +238,15 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6"><tr><td align="center" style="padding:24px 12px">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:${d.corner}px;overflow:hidden;border-collapse:separate">
 ${header}
-<tr><td style="padding:32px 32px 8px;font-size:${d.headingSize}px;line-height:1.25;font-weight:bold;color:${d.headingColor}">${esc(fill(c.heading))}</td></tr>
-<tr><td style="padding:0 32px 20px;font-size:${d.textSize}px;line-height:1.6;color:${d.textColor}">${paragraphs(fill(c.message)).map((p) => `<p style="margin:0 0 14px">${esc(p).replace(/\n/g, '<br>')}</p>`).join('')}</td></tr>
-${list}
+${ord && c.heroImageUrl ? `<tr><td style="padding:0;line-height:0;font-size:0">${imgTag(c.heroImageUrl, 600)}</td></tr>` : `<tr><td align="${ord ? 'center' : 'left'}" style="padding:32px 32px 8px;font-size:${d.headingSize}px;line-height:1.25;font-weight:bold;color:${d.headingColor}">${esc(fill(c.heading))}</td></tr>`}
+${ord && c.tagline ? `<tr><td align="center" style="padding:8px 32px 8px;font-size:${d.textSize}px;letter-spacing:.2em;text-transform:uppercase;color:${d.headingColor}">${esc(fill(c.tagline))}</td></tr>` : ''}
+<tr><td align="${ord ? 'center' : 'left'}" style="padding:${ord ? '12px' : '0'} 32px 20px;font-size:${d.textSize}px;line-height:1.6;color:${d.textColor}">${paragraphs(fill(c.message)).map((p) => `<p style="margin:0 0 14px">${esc(p).replace(/\n/g, '<br>')}</p>`).join('')}</td></tr>
+${ord ? orderList : list}
 ${button}
 <tr><td style="height:24px;line-height:24px;font-size:0">&nbsp;</td></tr>
+${ord && c.promoImageUrl ? `<tr><td style="padding:0 32px 24px">${linked(c.promoImageUrl, 536, c.promoLink)}</td></tr>` : ''}
 ${footer}
+${c.footerImageUrl ? `<tr><td style="padding:0;line-height:0;font-size:0">${linked(c.footerImageUrl, 600, c.footerImageLink)}</td></tr>` : ''}
 </table></td></tr></table></body></html>`;
 
   const text = [

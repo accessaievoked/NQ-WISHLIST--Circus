@@ -115,6 +115,14 @@ function client() {
       '<div class="em-row">' + field('footerMessage', 'Footer message', 'textarea', { rows: 3, hint: '{email} becomes your reply-to / sender address' }) + '</div>' +
       '<div class="em-row">' + field('footerNote', 'Footer note', 'textarea', { rows: 3 }) + '</div></div>' +
 
+      '<div class="em-card"><h3>Order-email style images</h3>' +
+      check('design.orderStyle', 'Use the order-confirmation layout (centred text, grey section bar, item/price table)') +
+      '<button class="em-btn ghost" id="em-preset" type="button">Apply the &amp;Circus look</button> <span class="em-hint">Sets lime header, white footer, square corners and the layout above.</span>' +
+      '<div class="em-row" style="margin-top:12px">' + field('heroImageUrl', 'Hero image link (https)', 'text', { ph: 'https://…/hero.png', hint: 'Big headline image under the header. Empty shows the Heading text instead.' }) + '</div>' +
+      '<div class="em-row">' + field('tagline', 'Tagline', 'text', { ph: "We can't wait", hint: 'Small spaced capitals under the hero' }) + '</div>' +
+      '<div class="em-row">' + field('promoImageUrl', 'Promo banner image (https)', 'text', { ph: 'https://…/promo.png', hint: 'Shown after the list' }) + field('promoLink', 'Promo banner link', 'text', { ph: 'https://…' }) + '</div>' +
+      '<div class="em-row">' + field('footerImageUrl', 'Bottom banner image (https)', 'text', { ph: 'https://…/footer.png', hint: 'Full-width image at the very bottom (e.g. social icons)' }) + field('footerImageLink', 'Bottom banner link', 'text', { ph: 'https://…' }) + '</div></div>' +
+
       '<div class="em-card"><h3>Design</h3><div class="em-row">' +
       field('design.headerBg', 'Header', 'color') + field('design.footerBg', 'Footer', 'color') + field('design.buttonBg', 'Button', 'color') + field('design.buttonText', 'Button text', 'color') + '</div>' +
       '<div class="em-row">' + field('design.headingColor', 'Heading colour', 'color') + field('design.textColor', 'Text colour', 'color') +
@@ -134,6 +142,14 @@ function client() {
     $('em-root').addEventListener('change', onInput);
     $('em-check').onclick = check_;
     $('em-test').onclick = test;
+    $('em-preset').onclick = function () {
+      var d = cfg.design;
+      d.orderStyle = true; d.headerBg = '#ccf381'; d.footerBg = '#ffffff'; d.corner = 0;
+      d.headingColor = '#111111'; d.textColor = '#111111'; d.buttonBg = '#111111'; d.buttonText = '#ffffff';
+      if (!cfg.tagline) cfg.tagline = "We can't wait";
+      dirty = true; $('em-saved').textContent = 'Unsaved changes';
+      build(info);
+    };
     refreshPreview();
     if (info.configured) check_(); // verify the Zoho login right away, no need to press the button
   }

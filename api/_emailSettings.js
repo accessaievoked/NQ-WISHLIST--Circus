@@ -21,11 +21,12 @@ const DEFAULTS = {
   showList: true, listTitle: 'Your saved items', showPrice: true,
   buttonText: 'View my wishlist',
   fromName: '', replyTo: '', logoUrl: '',
+  heroImageUrl: '', tagline: '', promoImageUrl: '', promoLink: '', footerImageUrl: '', footerImageLink: '',
   footerTitle: 'Questions?',
   footerMessage: 'Just reply to this email or reach us at {email}. We are happy to help.',
   footerNote: 'You are getting this because you saved items at {{store_name}}. You can stop these emails at any time with the link below.',
   design: {
-    corner: 8, headerBg: '#1f2937', logoFull: false, footerBg: '#f3f4f6', buttonBg: '#1f2937', buttonText: '#ffffff',
+    corner: 8, headerBg: '#1f2937', logoFull: false, orderStyle: false, footerBg: '#f3f4f6', buttonBg: '#1f2937', buttonText: '#ffffff',
     headingColor: '#111111', textColor: '#444444', headingSize: 24, textSize: 15, font: 'arial',
   },
 };
@@ -40,6 +41,8 @@ const text = (v, max, d, { multiline = false, allowEmpty = false } = {}) => {
   const t = clean(v).replace(multiline ? /\r\n?/g : /\s*[\r\n]+\s*/g, multiline ? '\n' : ' ').trim().slice(0, max);
   return t || (allowEmpty ? '' : d);
 };
+
+const https = (v) => (typeof v === 'string' && /^https:\/\/[^\s"'<>]+$/.test(v.trim()) ? v.trim().slice(0, 500) : '');
 
 function sanitize(raw) {
   const e = raw && typeof raw === 'object' ? raw : {};
@@ -61,6 +64,9 @@ function sanitize(raw) {
     fromName: text(e.fromName, 60, '', { allowEmpty: true }),
     replyTo: reply,
     logoUrl: logo,
+    heroImageUrl: https(e.heroImageUrl), tagline: text(e.tagline, 80, '', { allowEmpty: true }),
+    promoImageUrl: https(e.promoImageUrl), promoLink: https(e.promoLink),
+    footerImageUrl: https(e.footerImageUrl), footerImageLink: https(e.footerImageLink),
     footerTitle: text(e.footerTitle, 80, D.footerTitle, { allowEmpty: typeof e.footerTitle === 'string' }),
     footerMessage: text(e.footerMessage, 400, D.footerMessage, { multiline: true, allowEmpty: typeof e.footerMessage === 'string' }),
     footerNote: text(e.footerNote, 400, D.footerNote, { multiline: true, allowEmpty: typeof e.footerNote === 'string' }),
@@ -68,6 +74,7 @@ function sanitize(raw) {
       corner: int(d.corner, 0, 24, DD.corner),
       headerBg: hex(d.headerBg, DD.headerBg),
       logoFull: bool(d.logoFull, DD.logoFull),
+      orderStyle: bool(d.orderStyle, DD.orderStyle),
       footerBg: hex(d.footerBg, DD.footerBg),
       buttonBg: hex(d.buttonBg, DD.buttonBg),
       buttonText: hex(d.buttonText, DD.buttonText),
