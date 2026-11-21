@@ -128,7 +128,10 @@ function client() {
 
       '<div class="em-card"><h3>Total</h3>' +
       check('showTotal', 'Show the total of the saved items') +
-      '<div class="em-row">' + field('totalLabel', 'Total label', 'text') + field('totalNote', 'Small note', 'text', { ph: 'Inclusive of taxes' }) + field('shippingText', 'Shipping fee', 'text', { ph: 'Free', hint: 'Empty hides the shipping and sub-total rows' }) + '</div></div>' +
+      '<div class="em-row">' + field('totalLabel', 'Total label', 'text') + field('totalNote', 'Small note', 'text', { ph: 'Inclusive of taxes' }) + field('shippingText', 'Shipping fee', 'text', { ph: 'Free', hint: 'Empty hides this row' }) + '</div>' +
+      '<div class="em-row">' + field('discountText', 'Order discount', 'text', { ph: '-₹5', hint: 'Empty hides this row' }) + field('dutiesText', 'Duties', 'text', { ph: '₹0', hint: 'Empty hides this row' }) + field('savedText', '"You saved" line', 'text', { ph: 'You saved ₹20', hint: 'Shown in grey under the total' }) + '</div>' +
+      '<div class="em-row">' + field('extraLabel', 'Extra row (like the payment line)', 'text', { ph: 'Visa (ending in 4242)', hint: 'Empty hides it' }) + field('extraValue', 'Extra row value', 'text', { ph: '₹4,892', hint: 'Empty shows the total' }) + '</div>' +
+      '<div class="em-hint">The Sub-total and Total are added up automatically from the saved items. The other rows show exactly what you type.</div></div>' +
 
       '<div class="em-card"><h3>Support block (above the bottom banner)</h3>' +
       '<div class="em-row">' + field('supportText', 'Help text', 'textarea', { rows: 3, ph: "Need Help? We've got your back! Reach out to us via WhatsApp for instant support." }) + '</div>' +

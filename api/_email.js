@@ -201,16 +201,22 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
   const total = c.showPrice && shown.length && amounts.every((n) => Number.isFinite(n))
     ? `${prefix}${amounts.reduce((a, b) => a + b, 0).toLocaleString(/₹|rs/i.test(prefix) ? 'en-IN' : 'en-US', { minimumFractionDigits: amounts.some((n) => n % 1) ? 2 : 0, maximumFractionDigits: 2 })}` : '';
 
+  // totals block laid out like the order email: label in the middle column, value on the right
   const lbl = `font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:${d.headingColor}`;
-  const row = (label, value, top, big) => `<tr><td align="right" style="padding:${top}px 14px 0 0;${lbl}">${label}</td><td align="right" style="padding:${top}px 0 0;font-size:${big ? d.textSize + 1 : d.textSize}px;color:${d.headingColor};white-space:nowrap">${value}</td></tr>`;
-  const rule = '<tr><td colspan="2" style="padding-top:14px;border-bottom:1px solid #e5e7eb;font-size:0;line-height:0">&nbsp;</td></tr>';
-  const totalRows = total && c.showTotal !== false ? [
-    rule,
-    row('Sub-total', esc(total), 14),
-    c.shippingText ? row('Shipping fee', esc(c.shippingText), 8) : '',
-    rule,
-    row(`${esc(c.totalLabel || 'Total')}${c.totalNote ? ` <span style="font-size:9px;opacity:.6">(${esc(c.totalNote)})</span>` : ''}`, esc(total), 14, true),
-  ].join('') : '';
+  const row = (label, value, top, big) => `<tr><td width="46%"></td><td align="center" style="padding:${top}px 8px 0;${lbl}">${label}</td><td align="right" style="padding:${top}px 0 0;font-size:${big ? d.textSize + 1 : d.textSize}px;color:${d.headingColor};white-space:nowrap">${value}</td></tr>`;
+  const rule = '<tr><td colspan="3" style="padding-top:14px;border-bottom:1px solid #e5e7eb;font-size:0;line-height:0">&nbsp;</td></tr>';
+  const totalsTable = total && c.showTotal !== false ? `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        ${rule}
+        ${row('Sub-total', esc(total), 14)}
+        ${c.discountText ? row('Order discount', esc(c.discountText), 8) : ''}
+        ${c.shippingText ? row('Shipping fee', esc(c.shippingText), 8) : ''}
+        ${c.dutiesText ? row('Duties', esc(c.dutiesText), 8) : ''}
+        ${rule}
+        ${row(`${esc(c.totalLabel || 'Total')}${c.totalNote ? ` <span style="font-size:9px;opacity:.6">(${esc(c.totalNote)})</span>` : ''}`, esc(total), 14, true)}
+        ${c.savedText ? `<tr><td colspan="3" align="right" style="padding:8px 0 0;font-size:14px;color:#8a8a8a">${esc(c.savedText)}</td></tr>` : ''}
+        ${c.extraLabel ? `${rule}${row(esc(c.extraLabel), esc(c.extraValue || total), 14)}` : ''}
+      </table>` : '';
 
   const orderList = c.showList && shown.length ? `
     <tr><td style="padding:8px 32px 0">
@@ -222,8 +228,7 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
             <td width="56" valign="middle">${i.image ? `<img src="${esc(i.image)}" alt="" width="44" height="52" style="display:block;width:44px;height:52px;object-fit:cover;border:0">` : `<div style="width:44px;height:52px;background:#ececec"></div>`}</td>
             <td valign="middle" style="font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:${d.headingColor}"><a href="${esc(i.url)}" style="color:${d.headingColor};text-decoration:none;font-weight:bold">${esc(i.title)}</a></td>
           </tr></table></td>${c.showPrice ? `<td align="right" valign="middle" style="padding:12px 0;border-bottom:1px solid #eeeeee;font-size:${d.textSize}px;color:${d.headingColor};font-weight:bold;white-space:nowrap">${esc(i.price || '')}</td>` : ''}</tr>`).join('')}
-        ${totalRows}
-      </table></td></tr>` : '';
+      </table>${totalsTable}</td></tr>` : '';
 
   const list = c.showList && shown.length ? `
     <tr><td style="padding:8px 32px 0">
