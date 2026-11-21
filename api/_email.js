@@ -248,7 +248,7 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
         ${c.footerTitle ? `<div style="font-weight:bold;font-size:14px;margin-bottom:4px">${esc(fill(c.footerTitle))}</div>` : ''}
         ${c.footerMessage ? `<div>${inEmail(c.footerMessage)}</div>` : ''}
         ${c.footerNote ? `<div style="margin-top:12px;font-size:12px;opacity:.75">${inEmail(c.footerNote)}</div>` : ''}
-        ${unsub ? `<div style="margin-top:8px;font-size:12px"><a href="${esc(unsub)}" style="color:${ftrText};text-decoration:underline">Unsubscribe</a></div>` : ''}
+        ${unsub && !ord ? `<div style="margin-top:8px;font-size:12px"><a href="${esc(unsub)}" style="color:${ftrText};text-decoration:underline">Unsubscribe</a></div>` : ''}
       </td></tr>`;
 
   const lines = (t) => paragraphs(t).map((q) => esc(q).replace(/\n/g, '<br>')).join('<br><br>');
@@ -291,7 +291,7 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
     ? (bannerInner ? `<tr><td style="padding:0">${onImage(c.footerImageUrl, 205, bannerInner, 'center')}</td></tr>`
       : `<tr><td style="padding:0;line-height:0;font-size:0">${linked(c.footerImageUrl, 600, c.footerImageLink)}</td></tr>`) : '';
 
-  const msgRow = !paragraphs(fill(c.message)).length ? '' : `<tr><td align="${ord ? 'center' : 'left'}" style="padding:${ord ? '12px' : '0'} 32px 20px;font-size:${d.textSize}px;line-height:1.6;color:${d.textColor}">${paragraphs(fill(c.message)).map((p) => `<p style="margin:0 0 14px">${esc(p).replace(/\n/g, '<br>')}</p>`).join('')}</td></tr>`;
+  const msgRow = !paragraphs(fill(c.message)).length || (ord && c.showMessage !== true) ? '' : `<tr><td align="${ord ? 'center' : 'left'}" style="padding:${ord ? '12px' : '0'} 32px 20px;font-size:${d.textSize}px;line-height:1.6;color:${d.textColor}">${paragraphs(fill(c.message)).map((p) => `<p style="margin:0 0 14px">${esc(p).replace(/\n/g, '<br>')}</p>`).join('')}</td></tr>`;
 
   const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;700&display=swap" rel="stylesheet"></head>
 <body style="margin:0;padding:0;background:#f3f4f6;font-family:${d.font}">
@@ -310,6 +310,7 @@ ${ord ? promo : ''}
 ${ord ? support : ''}
 ${footer}
 ${bottom}
+${ord && unsub ? `<tr><td align="center" style="padding:22px 32px;font-size:12px"><a href="${esc(unsub)}" style="color:#000000;text-decoration:underline">Unsubscribe</a></td></tr>` : ''}
 </table></td></tr></table></body></html>`;
 
   const text = [

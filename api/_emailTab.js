@@ -109,7 +109,7 @@ function client() {
       '<div class="em-row">' + field('subject', 'Subject', 'text') + '</div>' +
       '<div class="em-row">' + field('heading', 'Heading', 'text') + '</div>' +
       '<div class="em-row">' + field('message', 'Message', 'textarea', { rows: 6, hint: 'Leave a blank line between paragraphs. You can use: ' + p }) + '</div>' +
-      check('showList', 'Show the list of saved products') + check('showPrice', 'Show prices') +
+      check('showMessage', 'Show the Message text (order layout hides it unless this is ticked)') + check('showList', 'Show the list of saved products') + check('showPrice', 'Show prices') +
       '<div class="em-row">' + field('listTitle', 'List title', 'text') + field('buttonText', 'Button text', 'text', { hint: 'Empty hides the button' }) + '</div>' +
       '<div class="em-row">' + field('footerTitle', 'Footer title', 'text') + '</div>' +
       '<div class="em-row">' + field('footerMessage', 'Footer message', 'textarea', { rows: 3, hint: '{email} becomes your reply-to / sender address' }) + '</div>' +
@@ -176,7 +176,7 @@ function client() {
       cfg.supportLabel = 'For any support reach out to us at :';
       cfg.supportEmail = 'hello@andcircus.com'; cfg.supportPhone = '6382546490';
       cfg.supportHours = 'Monday - Saturday - 10 AM - 6 PM';
-      cfg.whatsappLink = 'https://wa.me/9843137146?text=I%20want%20help%20%26circus'; cfg.showSupportIcons = true;
+      cfg.whatsappLink = 'https://api.whatsapp.com/send/?phone=9843137146&text=I+want+help+%26circus+&type=phone_number&app_absent=0'; cfg.showSupportIcons = true;
       cfg.footerImageUrl = F + 'Rectangle_673.png?v=1738247383'; cfg.footerImageLink = '';
       cfg.bannerTitle = 'Love Every Body'; cfg.bannerText = 'Copyright 2024 &CIRCUS™, All rights reserved';
       cfg.instagramLink = 'https://www.instagram.com/_andcircus/'; cfg.facebookLink = 'https://www.facebook.com/tailorandcircus/'; cfg.xLink = 'https://twitter.com/tailorandcircus/';
