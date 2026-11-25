@@ -79,6 +79,7 @@ async function compareAtByVariant(variantIds) {
 async function ensureEntryFields() {
   const want = [
     ['customer_email', 'Customer Email'], ['reminded_at', 'Reminder Sent At'], ['unsubscribed', 'Unsubscribed From Email'],
+    ['restock_notified_at', 'Back In Stock Email Sent At'],
   ];
   const look = await gql(`query { metaobjectDefinitionByType(type: "wishlist_entry") { id fieldDefinitions { key } } }`);
   const def = look.metaobjectDefinitionByType;

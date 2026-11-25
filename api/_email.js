@@ -165,14 +165,15 @@ function productList(titles, max = 5) {
 }
 
 // items: [{ title, url, price (formatted), image }]
-function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
-  const c = template(), d = c.design;
+// override: optional template fields replaced for this one email (the back-in-stock email uses it); buttonUrl sets the button link
+function renderEmail({ customerName, items, unsubscribeUrl: unsub = '', override = {} }) {
+  const c = { ...template(), ...override }, d = c.design;
   const name = setting('fromName', 'EMAIL_FROM_NAME') || storeName();
   const logoUrl = setting('logoUrl', 'EMAIL_LOGO_URL');
   const logo = /^https:\/\/[^\s"'<>]+$/.test(logoUrl) ? logoUrl : '';
   const contact = setting('replyTo', 'EMAIL_REPLY_TO') || mailUser();
   const shown = items.slice(0, c.maxItems);
-  const url = wishlistUrl();
+  const url = c.buttonUrl || wishlistUrl();
   const vars = {
     customer_name: String(customerName || '').trim().split(/\s+/)[0] || 'there',
     store_name: name,

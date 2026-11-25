@@ -32,6 +32,7 @@ const FIELDS_TO_ENSURE = [
   { key: 'customer_email', name: 'Customer Email' },            // email reminders
   { key: 'reminded_at',    name: 'Reminder Sent At' },          // email reminders
   { key: 'unsubscribed',   name: 'Unsubscribed From Email' },   // email reminders
+  { key: 'restock_notified_at', name: 'Back In Stock Email Sent At' }, // back-in-stock email
 ];
 
 async function ensureFields() {
@@ -104,7 +105,8 @@ module.exports = async function handler(req, res) {
             { key: 'customer_email', name: 'Customer Email',   type: 'single_line_text_field',  required: false },
             { key: 'reminded_at',    name: 'Reminder Sent At', type: 'single_line_text_field',  required: false },
             { key: 'unsubscribed',   name: 'Unsubscribed From Email', type: 'single_line_text_field', required: false },
-            { key: 'product_id',     name: 'Product ID',       type: 'single_line_text_field',  required: true  },
+            { key: 'restock_notified_at', name: 'Back In Stock Email Sent At', type: 'single_line_text_field', required: false },
+            { key: 'product_id',     name: 'Product ID',      type: 'single_line_text_field',  required: true  },
             { key: 'product_title',  name: 'Product Title',    type: 'single_line_text_field',  required: false },
             { key: 'product_handle', name: 'Product Handle',   type: 'single_line_text_field',  required: false },
             { key: 'variant_id',     name: 'Variant ID',       type: 'single_line_text_field',  required: false },
