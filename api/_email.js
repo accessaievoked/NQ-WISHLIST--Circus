@@ -223,7 +223,7 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '', override
 
   const orderList = c.showList && shown.length ? `
     <tr><td style="padding:8px 32px 0">
-      <div style="background:#f6f6f6;padding:10px 0 10px 2px;font-size:15px;font-weight:600;text-transform:uppercase;color:#5f5f5f">${esc(fill(c.listTitle))}</div>
+      <div style="background:#f6f6f6;padding:10px 0 10px 10px;font-size:15px;font-weight:600;text-transform:uppercase;color:#5f5f5f">${esc(fill(c.listTitle))}</div>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:14px">
         <tr><td style="padding:0 0 10px;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:${d.headingColor};border-bottom:1px solid #e5e7eb">Item</td>${c.showPrice ? `<td align="right" style="padding:0 0 10px;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:${d.headingColor};border-bottom:1px solid #e5e7eb">Price</td>` : ''}</tr>
         ${shown.map((i) => `<tr><td style="padding:12px 0;border-bottom:1px solid #eeeeee">
