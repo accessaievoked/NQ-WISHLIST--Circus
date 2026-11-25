@@ -56,6 +56,24 @@ const money = (v) => {
   return v === '' || v == null || !Number.isFinite(n) ? '' : '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 2 });
 };
 
+// Compare-at (MRP) price per variant id, as formatted text. Missing when the variant has none. Never throws.
+async function compareAtByVariant(variantIds) {
+  const ids = [...new Set(variantIds.map((v) => String(v || '').replace(/\D/g, '')).filter(Boolean))];
+  const out = {};
+  if (!ids.length) return out;
+  try {
+    const data = await gql(
+      `query($ids: [ID!]!) { nodes(ids: $ids) { ... on ProductVariant { id compareAtPrice price } } }`,
+      { ids: ids.map((i) => `gid://shopify/ProductVariant/${i}`) }
+    );
+    for (const n of data.nodes) {
+      if (!n || !n.compareAtPrice) continue;
+      if (Number(n.compareAtPrice) > Number(n.price)) out[n.id.split('/').pop()] = money(n.compareAtPrice);
+    }
+  } catch (e) { console.error('[Compare-at prices]', e.message); }
+  return out;
+}
+
 // Adds any email-related fields the wishlist_entry definition is missing (same job as /api/setup, but automatic).
 // Returns true if something was added.
 async function ensureEntryFields() {
@@ -78,4 +96,4 @@ async function ensureEntryFields() {
   return true;
 }
 
-module.exports = { gql, fetchAllEntries, updateEntry, ensureEntryFields, money };
+module.exports = { gql, fetchAllEntries, updateEntry, ensureEntryFields, money, compareAtByVariant };

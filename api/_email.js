@@ -205,14 +205,15 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '' }) {
   const lbl = `font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:${d.headingColor}`;
   const row = (label, value, top, big) => `<tr><td width="46%"></td><td align="center" style="padding:${top}px 8px 0;${lbl}">${label}</td><td align="right" style="padding:${top}px 0 0;font-size:${big ? d.textSize + 1 : d.textSize}px;color:${d.headingColor};white-space:nowrap">${value}</td></tr>`;
   const rule = '<tr><td colspan="3" style="padding-top:14px;border-bottom:1px solid #e5e7eb;font-size:0;line-height:0">&nbsp;</td></tr>';
-  const zero = `${prefix}0`; // rows with nothing typed show 0
+  // order discount = MRP (compare-at) total minus the normal price total; items without an MRP count at their normal price
+  const mrpAmounts = shown.map((i, n) => { const m = String(i.mrp || '').match(/\d[\d,]*(?:\.\d+)?/); return m ? parseFloat(m[0].replace(/,/g, '')) : amounts[n]; });
+  const saving = total ? mrpAmounts.reduce((a, b) => a + b, 0) - amounts.reduce((a, b) => a + b, 0) : 0;
+  const discount = `${prefix}${(saving > 0 ? saving : 0).toLocaleString(/₹|rs/i.test(prefix) ? 'en-IN' : 'en-US', { maximumFractionDigits: 2 })}`;
   const totalsTable = total && c.showTotal !== false ? `
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
         ${rule}
         ${row('Sub-total', esc(total), 14)}
-        ${row('Order discount', esc(c.discountText || zero), 8)}
-        ${row('Shipping fee', esc(c.shippingText || zero), 8)}
-        ${row('Duties', esc(c.dutiesText || zero), 8)}
+        ${row('Order discount', esc(discount), 8)}
         ${rule}
         ${row(`${esc(c.totalLabel || 'Total')}${c.totalNote ? ` <span style="font-size:9px;opacity:.6">(${esc(c.totalNote)})</span>` : ''}`, esc(total), 14, true)}
         ${c.savedText ? `<tr><td colspan="3" align="right" style="padding:8px 0 0;font-size:14px;color:#8a8a8a">${esc(c.savedText)}</td></tr>` : ''}

@@ -1,7 +1,7 @@
 // Reminder logic shared by the daily cron and the "send straight away" path (delay = 0 hours).
 const email = require('./_email');
 const settingsStore = require('./_emailSettings');
-const { gql, fetchAllEntries, updateEntry, money } = require('./_shopify');
+const { gql, fetchAllEntries, updateEntry, money, compareAtByVariant } = require('./_shopify');
 
 const HOUR = 3600000, DAY = 86400000;
 
@@ -32,11 +32,13 @@ function due(rows, cfg, now = Date.now()) {
 // Builds and sends one reminder, then stamps the entries so it is never sent twice.
 async function send(addr, fresh) {
   const base = email.storeUrl();
+  const mrp = await compareAtByVariant(fresh.map((r) => r.variant_id));
   const items = fresh.map((r) => ({
     title: r.product_title || 'Saved item',
     url: r.product_handle ? `${base}/products/${r.product_handle}` : email.wishlistUrl(),
     image: httpsUrl(r.product_image),
     price: money(r.product_price),
+    mrp: mrp[String(r.variant_id || '').replace(/\D/g, '')] || '',
   }));
   const mail = email.renderEmail({
     customerName: (fresh.find((r) => r.customer_name) || {}).customer_name,
@@ -78,18 +80,22 @@ async function previewItems(count = 3) {
   try {
     const seen = new Set();
     const rows = (await fetchAllEntries()).sort((a, b) => (Date.parse(b.added_at) || 0) - (Date.parse(a.added_at) || 0));
+    const picked = [];
     for (const r of rows) {
       const key = r.product_handle || r.product_title;
       if (!key || seen.has(key)) continue;
       seen.add(key);
-      items.push({
-        title: r.product_title || 'Saved item',
-        url: r.product_handle ? `${base}/products/${r.product_handle}` : email.wishlistUrl(),
-        image: httpsUrl(r.product_image),
-        price: money(r.product_price),
-      });
-      if (items.length >= count) break;
+      picked.push(r);
+      if (picked.length >= count) break;
     }
+    const mrp = await compareAtByVariant(picked.map((r) => r.variant_id));
+    items = picked.map((r) => ({
+      title: r.product_title || 'Saved item',
+      url: r.product_handle ? `${base}/products/${r.product_handle}` : email.wishlistUrl(),
+      image: httpsUrl(r.product_image),
+      price: money(r.product_price),
+      mrp: mrp[String(r.variant_id || '').replace(/\D/g, '')] || '',
+    }));
   } catch (e) { console.error('[Preview items: wishlist]', e.message); }
   if (!items.length) {
     try {
