@@ -74,6 +74,38 @@ async function compareAtByVariant(variantIds) {
   return out;
 }
 
+// Fills in a missing saved price from the live Shopify price (variant first, then product handle).
+// rows: wishlist entries. Returns Map(row -> formatted price) only for rows whose stored price was empty. Never throws.
+async function fillMissingPrices(rows) {
+  const out = new Map();
+  const missing = rows.filter((r) => !money(r.product_price));
+  if (!missing.length) return out;
+  try {
+    const ids = [...new Set(missing.map((r) => String(r.variant_id || '').replace(/\D/g, '')).filter(Boolean))];
+    const byVariant = {};
+    if (ids.length) {
+      const data = await gql(
+        `query($ids: [ID!]!) { nodes(ids: $ids) { ... on ProductVariant { id price } } }`,
+        { ids: ids.map((i) => `gid://shopify/ProductVariant/${i}`) }
+      );
+      for (const n of data.nodes) if (n && n.price) byVariant[n.id.split('/').pop()] = money(n.price);
+    }
+    for (const r of missing) {
+      let p = byVariant[String(r.variant_id || '').replace(/\D/g, '')];
+      if (!p && r.product_handle) {
+        const d = await gql(
+          `query($h: String!) { productByHandle(handle: $h) { priceRangeV2 { minVariantPrice { amount } } } }`,
+          { h: r.product_handle }
+        );
+        const a = d.productByHandle && d.productByHandle.priceRangeV2.minVariantPrice.amount;
+        if (a) p = money(a);
+      }
+      if (p) out.set(r, p);
+    }
+  } catch (e) { console.error('[Missing prices]', e.message); }
+  return out;
+}
+
 // Adds any email-related fields the wishlist_entry definition is missing (same job as /api/setup, but automatic).
 // Returns true if something was added.
 async function ensureEntryFields() {
@@ -97,4 +129,4 @@ async function ensureEntryFields() {
   return true;
 }
 
-module.exports = { gql, fetchAllEntries, updateEntry, ensureEntryFields, money, compareAtByVariant };
+module.exports = { gql, fetchAllEntries, updateEntry, ensureEntryFields, money, compareAtByVariant, fillMissingPrices };

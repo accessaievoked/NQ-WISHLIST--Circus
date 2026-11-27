@@ -1,7 +1,7 @@
 // Reminder logic shared by the daily cron and the "send straight away" path (delay = 0 hours).
 const email = require('./_email');
 const settingsStore = require('./_emailSettings');
-const { gql, fetchAllEntries, updateEntry, money, compareAtByVariant } = require('./_shopify');
+const { gql, fetchAllEntries, updateEntry, money, compareAtByVariant, fillMissingPrices } = require('./_shopify');
 
 const HOUR = 3600000, DAY = 86400000;
 
@@ -33,11 +33,12 @@ function due(rows, cfg, now = Date.now()) {
 async function send(addr, fresh) {
   const base = email.storeUrl();
   const mrp = await compareAtByVariant(fresh.map((r) => r.variant_id));
+  const live = await fillMissingPrices(fresh);
   const items = fresh.map((r) => ({
     title: r.product_title || 'Saved item',
     url: r.product_handle ? `${base}/products/${r.product_handle}` : email.wishlistUrl(),
     image: httpsUrl(r.product_image),
-    price: money(r.product_price),
+    price: money(r.product_price) || live.get(r) || '',
     mrp: mrp[String(r.variant_id || '').replace(/\D/g, '')] || '',
   }));
   const mail = email.renderEmail({
@@ -89,11 +90,12 @@ async function previewItems(count = 3) {
       if (picked.length >= count) break;
     }
     const mrp = await compareAtByVariant(picked.map((r) => r.variant_id));
+    const live = await fillMissingPrices(picked);
     items = picked.map((r) => ({
       title: r.product_title || 'Saved item',
       url: r.product_handle ? `${base}/products/${r.product_handle}` : email.wishlistUrl(),
       image: httpsUrl(r.product_image),
-      price: money(r.product_price),
+      price: money(r.product_price) || live.get(r) || '',
       mrp: mrp[String(r.variant_id || '').replace(/\D/g, '')] || '',
     }));
   } catch (e) { console.error('[Preview items: wishlist]', e.message); }
