@@ -196,6 +196,9 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '', override
   const imgTag = (u, w) => `<img src="${esc(u)}" alt="" width="${w}" style="display:block;width:100%;max-width:${w}px;height:auto;border:0">`;
   const linked = (u, w, link) => (link ? `<a href="${esc(link)}" style="text-decoration:none">${imgTag(u, w)}</a>` : imgTag(u, w));
 
+  // price cell content: struck-through MRP (when there is one) above the selling price
+  const priceHtml = (i) => `${i.mrp && i.price ? `<span style="display:block;font-size:12px;font-weight:normal;color:#8a8a8a;text-decoration:line-through">${esc(i.mrp)}</span>` : ''}${esc(i.price || '')}`;
+
   // total of the shown items, only when every price can be read (prices are plain text like "₹1,499")
   const amounts = shown.map((i) => { const m = String(i.price || '').match(/\d[\d,]*(?:\.\d+)?/); return m ? parseFloat(m[0].replace(/,/g, '')) : NaN; });
   const prefix = ((shown[0] && String(shown[0].price || '').match(/^\D*/)) || [''])[0].trim();
@@ -232,7 +235,7 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '', override
           <table role="presentation" cellpadding="0" cellspacing="0"><tr>
             <td width="56" valign="middle">${i.image ? `<img src="${esc(i.image)}" alt="" width="44" height="52" style="display:block;width:44px;height:52px;object-fit:cover;border:0">` : `<div style="width:44px;height:52px;background:#ececec"></div>`}</td>
             <td valign="middle" style="font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:${d.headingColor}"><a href="${esc(i.url)}" style="color:${d.headingColor};text-decoration:none;font-weight:bold">${esc(i.title)}</a></td>
-          </tr></table></td>${c.showPrice ? `<td align="right" valign="middle" style="padding:12px 0;border-bottom:1px solid #eeeeee;font-size:${d.textSize}px;color:${d.headingColor};font-weight:bold;white-space:nowrap">${esc(i.price || '')}</td>` : ''}</tr>`).join('')}
+          </tr></table></td>${c.showPrice ? `<td align="right" valign="middle" style="padding:12px 0;border-bottom:1px solid #eeeeee;font-size:${d.textSize}px;color:${d.headingColor};font-weight:bold;white-space:nowrap">${priceHtml(i)}</td>` : ''}</tr>`).join('')}
       </table>${totalsTable}</td></tr>` : '';
 
   const list = c.showList && shown.length ? `
@@ -245,7 +248,7 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '', override
     ? `<img src="${esc(i.image)}" alt="" width="56" height="64" style="display:block;width:56px;height:64px;object-fit:cover;border-radius:${Math.min(d.corner, 8)}px;border:0">`
     : `<div style="width:56px;height:64px;background:#ececec;border-radius:${Math.min(d.corner, 8)}px"></div>`}</td>
             <td valign="middle" style="padding-left:12px;font-size:${d.textSize}px;color:${d.headingColor}"><a href="${esc(i.url)}" style="color:${d.headingColor};text-decoration:none;font-weight:bold">${esc(i.title)}</a></td>
-            ${c.showPrice && i.price ? `<td valign="middle" align="right" style="font-size:${d.textSize}px;color:${d.headingColor};font-weight:bold;white-space:nowrap">${esc(i.price)}</td>` : ''}
+            ${c.showPrice && i.price ? `<td valign="middle" align="right" style="font-size:${d.textSize}px;color:${d.headingColor};font-weight:bold;white-space:nowrap">${priceHtml(i)}</td>` : ''}
           </tr></table></td></tr>`).join('')}
       </table></td></tr>` : '';
 
