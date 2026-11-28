@@ -196,8 +196,8 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '', override
   const imgTag = (u, w) => `<img src="${esc(u)}" alt="" width="${w}" style="display:block;width:100%;max-width:${w}px;height:auto;border:0">`;
   const linked = (u, w, link) => (link ? `<a href="${esc(link)}" style="text-decoration:none">${imgTag(u, w)}</a>` : imgTag(u, w));
 
-  // price cell content: struck-through MRP (when there is one) above the selling price
-  const priceHtml = (i) => `${i.mrp && i.price ? `<span style="display:block;font-size:12px;font-weight:normal;color:#8a8a8a;text-decoration:line-through">${esc(i.mrp)}</span>` : ''}${esc(i.price || '')}`;
+  // price cell content: selling price on the left, struck-through MRP (when there is one) on its right
+  const priceHtml = (i) => `${esc(i.price || '')}${i.mrp && i.price ? ` <span style="font-size:12px;font-weight:normal;color:#8a8a8a;text-decoration:line-through;padding-left:6px">${esc(i.mrp)}</span>` : ''}`;
 
   // total of the shown items, only when every price can be read (prices are plain text like "₹1,499")
   const amounts = shown.map((i) => { const m = String(i.price || '').match(/\d[\d,]*(?:\.\d+)?/); return m ? parseFloat(m[0].replace(/,/g, '')) : NaN; });
