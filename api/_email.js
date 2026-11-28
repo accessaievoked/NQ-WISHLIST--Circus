@@ -210,10 +210,12 @@ function renderEmail({ customerName, items, unsubscribeUrl: unsub = '', override
   const mrpAmounts = shown.map((i, n) => { const m = String(i.mrp || '').match(/\d[\d,]*(?:\.\d+)?/); return m ? parseFloat(m[0].replace(/,/g, '')) : amounts[n]; });
   const saving = total ? mrpAmounts.reduce((a, b) => a + b, 0) - amounts.reduce((a, b) => a + b, 0) : 0;
   const discount = `${prefix}${(saving > 0 ? saving : 0).toLocaleString(/₹|rs/i.test(prefix) ? 'en-IN' : 'en-US', { maximumFractionDigits: 2 })}`;
+  // sub-total = MRP (compare-at) total; discount = MRP minus selling price; total = selling price total
+  const subtotal = total ? `${prefix}${mrpAmounts.reduce((a, b) => a + b, 0).toLocaleString(/₹|rs/i.test(prefix) ? 'en-IN' : 'en-US', { maximumFractionDigits: 2 })}` : '';
   const totalsTable = total && c.showTotal !== false ? `
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
         ${rule}
-        ${row('Sub-total', esc(total), 14)}
+        ${row('Sub-total', esc(subtotal), 14)}
         ${row('Order discount', esc(discount), 8)}
         ${rule}
         ${row(`${esc(c.totalLabel || 'Total')}${c.totalNote ? ` <span style="font-size:9px;opacity:.6">(${esc(c.totalNote)})</span>` : ''}`, esc(total), 14, true)}
